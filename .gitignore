@@ -1,0 +1,19 @@
+# Vivado generated files
+*.jou
+*.log
+*.str
+.Xil/
+*_wrapper.v
+*_wrapper.vhd
+
+# Vivado project
+axi-master/
+
+# Bitstreams and implementation outputs
+*.bit
+*.bin
+*.mcs
+
+# Synthesis and implementation reports (optional to track)
+*.rpt
+*.dcp
