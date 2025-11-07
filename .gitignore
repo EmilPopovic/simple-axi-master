@@ -1,13 +1,14 @@
-# Vivado generated files
-*.jou
-*.log
-*.str
-.Xil/
-*_wrapper.v
-*_wrapper.vhd
-
 # Vivado project
 axi-master/
+*.xpr
+*.cache/
+*.runs/
+*.sim/
+*.hw/
+*.ip_user_files/
+*.jou
+*.log
+.Xil/
 
 # Bitstreams and implementation outputs
 *.bit
