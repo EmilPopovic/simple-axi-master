@@ -10,6 +10,10 @@ axi-master/
 *.log
 .Xil/
 
+# Block designs
+bd/*
+!bd/*.tcl
+
 # Bitstreams and implementation outputs
 *.bit
 *.bin

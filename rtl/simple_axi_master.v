@@ -122,7 +122,6 @@ module simple_axi_master #(
             r_wdata <= {DATA_WIDTH{1'b0}};
             r_rw    <= 2'b00;
             r_wlast <= 1'b0;
-            o_done  <= 1'b0;
             o_rdata <= {DATA_WIDTH{1'b0}};
         end else begin
             r_state <= r_next_state;
@@ -279,7 +278,7 @@ module simple_axi_master #(
             end
         end
 
-        default: r_state = S_IDLE;
+        default: r_next_state = S_IDLE;
 
         endcase
     end

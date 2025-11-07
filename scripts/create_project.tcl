@@ -38,20 +38,27 @@ if {[file exists ${constraints_dir}]} {
 # Add IP cores (WITHOUT copying)
 if {[file exists ${ip_dir}]} {
     puts "Adding IP from ${ip_dir}..."
-    # IP cores should be in subdirectories
     foreach ip_xci [glob -nocomplain ${ip_dir}/*/*.xci] {
         add_files -norecurse -fileset sources_1 ${ip_xci}
     }
 }
 
-# Add block design if exists
-if {[file exists ${bd_dir}]} {
-    puts "Adding block design from ${bd_dir}..."
-    # Source the BD file
-    foreach bd_file [glob -nocomplain ${bd_dir}/*.bd] {
-        # For existing BD, just add it
-        add_files -norecurse -fileset sources_1 ${bd_file}
-    }
+# Source block design from TCL
+if {[file exists ${bd_dir}/design_1.tcl]} {
+    puts "Creating block design from ${bd_dir}/design_1.tcl..."
+    source ${bd_dir}/design_1.tcl
+} else {
+    puts "WARNING: Block design TCL not found at ${bd_dir}/design_1.tcl"
+    puts "         Create block design in Vivado and export with:"
+    puts "         write_bd_tcl bd/design_1.tcl"
+}
+
+# Create HDL wrapper if block design exists
+if {[file exists ${bd_dir}/design_1/design_1.bd]} {
+    puts "Generating HDL wrapper for block design..."
+    make_wrapper -files [get_files ${bd_dir}/design_1/design_1.bd] -top -import
+    set_property top design_1_wrapper [current_fileset]
+    puts "Top-level set to design_1_wrapper"
 }
 
 # Add simulation sources
@@ -60,19 +67,22 @@ if {[file exists ${sim_dir}]} {
     foreach sim_file [glob -nocomplain ${sim_dir}/tb_*.v ${sim_dir}/tb_*.sv] {
         add_files -norecurse -fileset sim_1 ${sim_file}
     }
+    
+    # Set simulation top
+    set_property top tb_simple_axi_master [get_filesets sim_1]
+    set_property top_lib xil_defaultlib [get_filesets sim_1]
+    
+    # Simulation settings
+    set_property -name {xsim.simulate.runtime} -value {1000ns} -objects [get_filesets sim_1]
+    puts "Simulation configured"
 }
 
-# Set simulation top
-set_property top tb_simple_axi_master [get_filesets sim_1]
-set_property top_lib xil_defaultlib [get_filesets sim_1]
-
-# Simulation settings
-set_property -name {xsim.simulate.runtime} -value {1000ns} -objects [get_filesets sim_1]
-
-puts "Simulation configured"
-
-# Set top module (adjust as needed)
-# set_property top simple_axi_master [current_fileset]
-
+puts ""
+puts "=========================================="
 puts "Project created successfully!"
-puts "Open with: vivado ${project_dir}/${project_name}.xpr"
+puts "=========================================="
+puts ""
+puts "Next steps:"
+puts "  1. Open project: vivado ${project_dir}/${project_name}.xpr"
+puts "  2. Build: make build (or manually synthesize/implement)"
+puts ""
