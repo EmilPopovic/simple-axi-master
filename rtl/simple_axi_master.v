@@ -230,7 +230,6 @@ module simple_axi_master(
         S_W_SET_DATA_LAST: begin
             o_wait = 1'b1;
             m_axi_wvalid = 1'b1;
-            m_axi_bready = 1'b1;
 
             if (m_axi_wready) begin
                r_next_state = S_W_RET;
