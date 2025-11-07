@@ -6,8 +6,8 @@ PROJECT_DIR := $(CURDIR)/$(PROJECT_NAME)
 SCRIPTS_DIR := $(CURDIR)/scripts
 
 VIVADO := vivado
-VIVADO_BATCH := $(VIVADO) -mode batch -source
-VIVADO_GUI := $(VIVADO) -mode gui
+VIVADO_BATCH := $(VIVADO) -mode batch -nolog -nojournal -source
+VIVADO_GUI := $(VIVADO) -mode gui -nolog -nojournal
 
 .PHONY: all
 all: project
