@@ -9,66 +9,64 @@
 `define RESP_SLVERR 2'b10
 `define RESP_DECERR 2'b11
 
-module simple_axi_master #(
-    parameter DATA_WIDTH = 32,
-    parameter ADDR_WIDTH = 32
-)(
-    input  wire                    i_clk,  // Global clock
-    input  wire                    i_rst,  // Global reset
+module simple_axi_master(
+    input  wire        i_clk,  // Global clock
+    input  wire        i_rst,  // Global reset
 
     // Internal bus side
-    input  wire [ADDR_WIDTH-1:0]   i_addr,        // Address bus
-    input  wire [DATA_WIDTH-1:0]   i_wdata,       // Write data bus
-    output reg  [DATA_WIDTH-1:0]   o_rdata,       // Read data bus
-    input  wire [1:0]              i_rw,          // 00-idle, 01-write, 10-read, 11-reserved
-    output reg                     o_wait,        // Transfer active
-    output reg                     o_done,        // 1 after completing transfer
-    input  wire                    i_clear_done,  // Clear done status (sets done to 0)
-    output reg                     o_invalid,     // Requested invalid address
-    output reg                     o_error,       // AXI returned error
+    input  wire [31:0] i_addr,        // Address bus
+    input  wire [63:0] i_wdata,       // Write data bus
+    input  wire [2:0]  i_wsize,       // 0-byte, 1-half, 2-word, 3-dword
+    output reg  [63:0] o_rdata,       // Read data bus
+    input  wire [1:0]  i_rw,          // 00-idle, 01-write, 10-read, 11-reserved
+    output reg         o_wait,        // Transfer active
+    output reg         o_done,        // 1 after completing transfer
+    input  wire        i_clear_done,  // Clear done status (sets done to 0)
+    output reg         o_invalid,     // Requested invalid address
+    output reg         o_error,       // AXI returned error
 
     // Write Address (AW) channel signals
-    output reg                     m_axi_awvalid,
-    input  wire                    m_axi_awready,
-    output wire [ADDR_WIDTH-1:0]   m_axi_awaddr,
-    output wire [2:0]              m_axi_awsize,
-    output wire [1:0]              m_axi_awburst,
-    output wire [3:0]              m_axi_awcache,
-    output wire [2:0]              m_axi_awprot,
-    output wire [7:0]              m_axi_awlen,
-    output wire                    m_axi_awlock,
-    output wire [3:0]              m_axi_awqos,
+    output reg         m_axi_awvalid,
+    input  wire        m_axi_awready,
+    output wire [31:0] m_axi_awaddr,
+    output wire [2:0]  m_axi_awsize,
+    output wire [1:0]  m_axi_awburst,
+    output wire [3:0]  m_axi_awcache,
+    output wire [2:0]  m_axi_awprot,
+    output wire [7:0]  m_axi_awlen,
+    output wire        m_axi_awlock,
+    output wire [3:0]  m_axi_awqos,
 
     // Write Data (W) channel signals
-    output reg                     m_axi_wvalid,
-    input  wire                    m_axi_wready,
-    output wire                    m_axi_wlast,
-    output wire [DATA_WIDTH-1:0]   m_axi_wdata,
-    output wire [DATA_WIDTH/8-1:0] m_axi_wstrb,
+    output reg         m_axi_wvalid,
+    input  wire        m_axi_wready,
+    output wire        m_axi_wlast,
+    output wire [63:0] m_axi_wdata,
+    output reg  [7:0]  m_axi_wstrb,
 
     // Write Response (B) channel signals
-    input  wire                    m_axi_bvalid,
-    output reg                     m_axi_bready,
-    input  wire [1:0]              m_axi_bresp,
+    input  wire        m_axi_bvalid,
+    output reg         m_axi_bready,
+    input  wire [1:0]  m_axi_bresp,
 
     // Read Address (AR) channel signals
-    output reg                     m_axi_arvalid,
-    input  wire                    m_axi_arready,
-    output wire [ADDR_WIDTH-1:0]   m_axi_araddr,
-    output wire [2:0]              m_axi_arsize,
-    output wire [1:0]              m_axi_arburst,
-    output wire [3:0]              m_axi_arcache,
-    output wire [2:0]              m_axi_arprot,
-    output wire [7:0]              m_axi_arlen,
-    output wire                    m_axi_arlock,
-    output wire [3:0]              m_axi_arqos,
+    output reg         m_axi_arvalid,
+    input  wire        m_axi_arready,
+    output wire [31:0] m_axi_araddr,
+    output wire [2:0]  m_axi_arsize,
+    output wire [1:0]  m_axi_arburst,
+    output wire [3:0]  m_axi_arcache,
+    output wire [2:0]  m_axi_arprot,
+    output wire [7:0]  m_axi_arlen,
+    output wire        m_axi_arlock,
+    output wire [3:0]  m_axi_arqos,
 
     // Read Data (R) channel signals
-    input  wire                    m_axi_rvalid,
-    output reg                     m_axi_rready,
-    input  wire                    m_axi_rlast,
-    input  wire [DATA_WIDTH-1:0]   m_axi_rdata,
-    input  wire [1:0]              m_axi_rresp
+    input  wire        m_axi_rvalid,
+    output reg         m_axi_rready,
+    input  wire        m_axi_rlast,
+    input  wire [63:0] m_axi_rdata,
+    input  wire [1:0]  m_axi_rresp
 );
     // States
     localparam S_IDLE             = 4'b0000;  // No active transaction
@@ -82,18 +80,19 @@ module simple_axi_master #(
     localparam S_R_READ_DATA_LAST = 4'b1000;  // Read last data and return
 
     // Internal registers
-    reg [3:0]            r_state;
-    reg [3:0]            r_next_state;
-    reg [ADDR_WIDTH-1:0] r_addr;
-    reg [DATA_WIDTH-1:0] r_wdata;
-    reg [1:0]            r_rw;
-    reg                  r_wlast;
+    reg [3:0]  r_state;
+    reg [3:0]  r_next_state;
+    reg [31:0] r_addr;
+    reg [63:0] r_wdata;
+    reg [2:0]  r_wsize;
+    reg [1:0]  r_rw;
+    reg        r_wlast;
+
+    wire [2:0] byte_offset = r_addr[2:0];
 
     // AXI constants
-    localparam AXSIZE = $clog2(DATA_WIDTH/8);  // Log2 of data width in bytes
-
     assign m_axi_awaddr  = r_addr;
-    assign m_axi_awsize  = AXSIZE;
+    assign m_axi_awsize  = r_wsize;
     assign m_axi_awburst = 2'b01;    // INCR
     assign m_axi_awcache = 4'b0011;  // Bufferable
     assign m_axi_awprot  = 3'b000;   // Unprivileged
@@ -101,12 +100,11 @@ module simple_axi_master #(
     assign m_axi_awlock  = 1'b0;     // Normal
     assign m_axi_awqos   = 4'h0;     // No QoS
 
-    assign m_axi_wdata = r_wdata;
-    assign m_axi_wstrb = {DATA_WIDTH/8{1'b1}};  // All bytes enabled
-    assign m_axi_wlast = r_wlast;
+    assign m_axi_wdata   = r_wdata << (byte_offset * 8);
+    assign m_axi_wlast   = r_wlast;
 
     assign m_axi_araddr  = r_addr;
-    assign m_axi_arsize  = AXSIZE;
+    assign m_axi_arsize  = r_wsize;
     assign m_axi_arburst = 2'b01;    // INCR
     assign m_axi_arcache = 4'b0011;  // Bufferable
     assign m_axi_arprot  = 3'b000;   // Unprivileged
@@ -114,26 +112,39 @@ module simple_axi_master #(
     assign m_axi_arlock  = 1'b0;     // Normal
     assign m_axi_arqos   = 4'h0;     // No QoS
 
+    // Strobe calculation
+    always @(*) begin
+        case(i_wsize)
+            3'b000: m_axi_wstrb = 8'b0000_0001 << (byte_offset);  // 1 byte
+            3'b001: m_axi_wstrb = 8'b0000_0011 << (byte_offset);  // 2 bytes
+            3'b010: m_axi_wstrb = 8'b0000_1111 << (byte_offset);  // 4 bytes
+            3'b011: m_axi_wstrb = 8'b1111_1111;                   // 8 bytes
+            default: m_axi_wstrb = 8'b0000_0000;
+        endcase
+    end
+
     // Sequential logic
     always @(posedge i_clk) begin
         if (i_rst) begin
             r_state <= S_IDLE;
-            r_addr  <= {ADDR_WIDTH{1'b0}};
-            r_wdata <= {DATA_WIDTH{1'b0}};
+            r_addr  <= 32'b0;
+            r_wdata <= 64'b0;
+            r_wsize <= 2'b0;
             r_rw    <= 2'b00;
             r_wlast <= 1'b0;
-            o_rdata <= {DATA_WIDTH{1'b0}};
+            o_rdata <= 64'b0;
         end else begin
             r_state <= r_next_state;
 
             if ((r_state == S_IDLE || r_state == S_IDLE_DONE) && i_rw != `RW_NOP) begin
                 r_addr  <= i_addr;
                 r_wdata <= i_wdata;
+                r_wsize <= i_wsize;
                 r_rw    <= i_rw;
             end
 
             if (r_state == S_R_READ_DATA_LAST && m_axi_rvalid) begin
-                o_rdata <= m_axi_rdata;
+                o_rdata <= m_axi_rdata >> (byte_offset * 8);
             end
 
             if (r_state == S_W_SET_DATA_LAST && m_axi_wready) begin
