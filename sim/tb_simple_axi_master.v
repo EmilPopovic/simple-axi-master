@@ -116,6 +116,8 @@ module tb_simple_axi_master();
     reg [31:0] last_addr;
     reg [7:0]  last_wstrb;
     reg [63:0] last_wdata;
+    
+    integer k;
 
     // AXI slave behavior
     always @(posedge clk) begin
@@ -133,7 +135,6 @@ module tb_simple_axi_master();
             last_wdata <= axi_wdata;
             last_wstrb <= axi_wstrb;
             // Store byte-wise in memory
-            integer k;
             for (k=0; k<8; k=k+1) begin
                 if (axi_wstrb[k])
                     mem[last_addr[10:3]][8*k +:8] <= axi_wdata[8*k +:8];

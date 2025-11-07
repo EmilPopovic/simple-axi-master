@@ -40,7 +40,7 @@ module simple_axi_master(
     // Write Data (W) channel signals
     output reg         m_axi_wvalid,
     input  wire        m_axi_wready,
-    output wire        m_axi_wlast,
+    output reg         m_axi_wlast,
     output wire [63:0] m_axi_wdata,
     output reg  [7:0]  m_axi_wstrb,
 
@@ -86,7 +86,6 @@ module simple_axi_master(
     reg [63:0] r_wdata;
     reg [2:0]  r_wsize;
     reg [1:0]  r_rw;
-    reg        r_wlast;
 
     wire [2:0] byte_offset = r_addr[2:0];
 
@@ -101,7 +100,6 @@ module simple_axi_master(
     assign m_axi_awqos   = 4'h0;     // No QoS
 
     assign m_axi_wdata   = r_wdata << (byte_offset * 8);
-    assign m_axi_wlast   = r_wlast;
 
     assign m_axi_araddr  = r_addr;
     assign m_axi_arsize  = r_wsize;
@@ -131,7 +129,6 @@ module simple_axi_master(
             r_wdata <= 64'b0;
             r_wsize <= 2'b0;
             r_rw    <= 2'b00;
-            r_wlast <= 1'b0;
             o_rdata <= 64'b0;
         end else begin
             r_state <= r_next_state;
@@ -146,12 +143,6 @@ module simple_axi_master(
             if (r_state == S_R_READ_DATA_LAST && m_axi_rvalid) begin
                 o_rdata <= m_axi_rdata >> (byte_offset * 8);
             end
-
-            if (r_state == S_W_SET_DATA_LAST && m_axi_wready) begin
-                r_wlast <= 1'b1;
-            end else if (r_state == S_W_RET) begin
-                r_wlast <= 1'b0;
-            end
         end
     end
 
@@ -160,12 +151,14 @@ module simple_axi_master(
         r_next_state  = r_state;
         m_axi_awvalid = 1'b0;
         m_axi_wvalid  = 1'b0;
+        m_axi_wlast   = 1'b0;
         m_axi_bready  = 1'b0;
         m_axi_arvalid = 1'b0;
         m_axi_rready  = 1'b0;
         o_done        = 1'b0;
         o_wait        = 1'b0;
         o_error       = 1'b0;
+        o_invalid     = 1'b0;
 
         case (r_state)
 
@@ -237,18 +230,24 @@ module simple_axi_master(
         S_W_SET_DATA_LAST: begin
             o_wait = 1'b1;
             m_axi_wvalid = 1'b1;
+            m_axi_bready = 1'b1;
 
             if (m_axi_wready) begin
                r_next_state = S_W_RET;
-               m_axi_bready = 1'b1;
+               m_axi_wlast  = 1'b1;
             end
         end
 
         S_W_RET: begin
             o_wait = 1'b1;
+            m_axi_bready = 1'b1;
 
             if (m_axi_bvalid) begin
-                r_next_state = S_IDLE_DONE;
+                if (i_clear_done) begin
+                    r_next_state = S_IDLE;
+                end else begin
+                    r_next_state = S_IDLE_DONE;
+                end
 
                 o_wait = 1'b0;
                 o_done = 1'b1;
@@ -279,7 +278,11 @@ module simple_axi_master(
             m_axi_rready = 1'b1;
 
             if (m_axi_rvalid) begin
-                r_next_state = S_IDLE_DONE;
+                if (i_clear_done) begin
+                    r_next_state = S_IDLE;
+                end else begin
+                    r_next_state = S_IDLE_DONE;
+                end
 
                 o_wait = 1'b0;
                 o_done = 1'b1;
