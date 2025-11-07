@@ -8,6 +8,7 @@ set rtl_dir "[file normalize [file dirname [info script]]/../rtl]"
 set constraints_dir "[file normalize [file dirname [info script]]/../constraints]"
 set ip_dir "[file normalize [file dirname [info script]]/../ip]"
 set bd_dir "[file normalize [file dirname [info script]]/../bd]"
+set sim_dir "[file normalize [file dirname [info script]]/../sim]"
 
 # Device part for PYNQ-Z2
 set part "xc7z020clg400-1"
@@ -52,6 +53,23 @@ if {[file exists ${bd_dir}]} {
         add_files -norecurse -fileset sources_1 ${bd_file}
     }
 }
+
+# Add simulation sources
+if {[file exists ${sim_dir}]} {
+    puts "Adding simulation sources from ${sim_dir}..."
+    foreach sim_file [glob -nocomplain ${sim_dir}/tb_*.v ${sim_dir}/tb_*.sv] {
+        add_files -norecurse -fileset sim_1 ${sim_file}
+    }
+}
+
+# Set simulation top
+set_property top tb_simple_axi_master [get_filesets sim_1]
+set_property top_lib xil_defaultlib [get_filesets sim_1]
+
+# Simulation settings
+set_property -name {xsim.simulate.runtime} -value {1000ns} -objects [get_filesets sim_1]
+
+puts "Simulation configured"
 
 # Set top module (adjust as needed)
 # set_property top simple_axi_master [current_fileset]
