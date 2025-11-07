@@ -28,47 +28,47 @@ module simple_axi_master #(
     output reg                     o_error,       // AXI returned error
 
     // Write Address (AW) channel signals
-    output reg                     o_axi_awvalid,
-    input  wire                    i_axi_awready,
-    output wire [ADDR_WIDTH-1:0]   o_axi_awaddr,
-    output wire [2:0]              o_axi_awsize,
-    output wire [1:0]              o_axi_awburst,
-    output wire [3:0]              o_axi_awcache,
-    output wire [2:0]              o_axi_awprot,
-    output wire [7:0]              o_axi_awlen,
-    output wire                    o_axi_awlock,
-    output wire [3:0]              o_axi_awqos,
+    output reg                     m_axi_awvalid,
+    input  wire                    m_axi_awready,
+    output wire [ADDR_WIDTH-1:0]   m_axi_awaddr,
+    output wire [2:0]              m_axi_awsize,
+    output wire [1:0]              m_axi_awburst,
+    output wire [3:0]              m_axi_awcache,
+    output wire [2:0]              m_axi_awprot,
+    output wire [7:0]              m_axi_awlen,
+    output wire                    m_axi_awlock,
+    output wire [3:0]              m_axi_awqos,
 
     // Write Data (W) channel signals
-    output reg                     o_axi_wvalid,
-    input  wire                    i_axi_wready,
-    output wire                    o_axi_wlast,
-    output wire [DATA_WIDTH-1:0]   o_axi_wdata,
-    output wire [DATA_WIDTH/8-1:0] o_axi_wstrb,
+    output reg                     m_axi_wvalid,
+    input  wire                    m_axi_wready,
+    output wire                    m_axi_wlast,
+    output wire [DATA_WIDTH-1:0]   m_axi_wdata,
+    output wire [DATA_WIDTH/8-1:0] m_axi_wstrb,
 
     // Write Response (B) channel signals
-    input  wire                    i_axi_bvalid,
-    output reg                     o_axi_bready,
-    input  wire [1:0]              i_axi_bresp,
+    input  wire                    m_axi_bvalid,
+    output reg                     m_axi_bready,
+    input  wire [1:0]              m_axi_bresp,
 
     // Read Address (AR) channel signals
-    output reg                     o_axi_arvalid,
-    input  wire                    i_axi_arready,
-    output wire [ADDR_WIDTH-1:0]   o_axi_araddr,
-    output wire [2:0]              o_axi_arsize,
-    output wire [1:0]              o_axi_arburst,
-    output wire [3:0]              o_axi_arcache,
-    output wire [2:0]              o_axi_arprot,
-    output wire [7:0]              o_axi_arlen,
-    output wire                    o_axi_arlock,
-    output wire [3:0]              o_axi_arqos,
+    output reg                     m_axi_arvalid,
+    input  wire                    m_axi_arready,
+    output wire [ADDR_WIDTH-1:0]   m_axi_araddr,
+    output wire [2:0]              m_axi_arsize,
+    output wire [1:0]              m_axi_arburst,
+    output wire [3:0]              m_axi_arcache,
+    output wire [2:0]              m_axi_arprot,
+    output wire [7:0]              m_axi_arlen,
+    output wire                    m_axi_arlock,
+    output wire [3:0]              m_axi_arqos,
 
     // Read Data (R) channel signals
-    input  wire                    i_axi_rvalid,
-    output reg                     o_axi_rready,
-    input  wire                    i_axi_rlast,
-    input  wire [DATA_WIDTH-1:0]   i_axi_rdata,
-    input  wire [1:0]              i_axi_rresp
+    input  wire                    m_axi_rvalid,
+    output reg                     m_axi_rready,
+    input  wire                    m_axi_rlast,
+    input  wire [DATA_WIDTH-1:0]   m_axi_rdata,
+    input  wire [1:0]              m_axi_rresp
 );
     // States
     localparam S_IDLE             = 4'b0000;  // No active transaction
@@ -92,27 +92,27 @@ module simple_axi_master #(
     // AXI constants
     localparam AXSIZE = $clog2(DATA_WIDTH/8);  // Log2 of data width in bytes
 
-    assign o_axi_awaddr  = r_addr;
-    assign o_axi_awsize  = AXSIZE;
-    assign o_axi_awburst = 2'b01;    // INCR
-    assign o_axi_awcache = 4'b0011;  // Bufferable
-    assign o_axi_awprot  = 3'b000;   // Unprivileged
-    assign o_axi_awlen   = 8'h0;     // Single beat
-    assign o_axi_awlock  = 1'b0;     // Normal
-    assign o_axi_awqos   = 4'h0;     // No QoS
+    assign m_axi_awaddr  = r_addr;
+    assign m_axi_awsize  = AXSIZE;
+    assign m_axi_awburst = 2'b01;    // INCR
+    assign m_axi_awcache = 4'b0011;  // Bufferable
+    assign m_axi_awprot  = 3'b000;   // Unprivileged
+    assign m_axi_awlen   = 8'h0;     // Single beat
+    assign m_axi_awlock  = 1'b0;     // Normal
+    assign m_axi_awqos   = 4'h0;     // No QoS
 
-    assign o_axi_wdata = r_wdata;
-    assign o_axi_wstrb = {DATA_WIDTH/8{1'b1}};  // All bytes enabled
-    assign o_axi_wlast = r_wlast;
+    assign m_axi_wdata = r_wdata;
+    assign m_axi_wstrb = {DATA_WIDTH/8{1'b1}};  // All bytes enabled
+    assign m_axi_wlast = r_wlast;
 
-    assign o_axi_araddr  = r_addr;
-    assign o_axi_arsize  = AXSIZE;
-    assign o_axi_arburst = 2'b01;    // INCR
-    assign o_axi_arcache = 4'b0011;  // Bufferable
-    assign o_axi_arprot  = 3'b000;   // Unprivileged
-    assign o_axi_arlen   = 8'h0;     // Single beat
-    assign o_axi_arlock  = 1'b0;     // Normal
-    assign o_axi_arqos   = 4'h0;     // No QoS
+    assign m_axi_araddr  = r_addr;
+    assign m_axi_arsize  = AXSIZE;
+    assign m_axi_arburst = 2'b01;    // INCR
+    assign m_axi_arcache = 4'b0011;  // Bufferable
+    assign m_axi_arprot  = 3'b000;   // Unprivileged
+    assign m_axi_arlen   = 8'h0;     // Single beat
+    assign m_axi_arlock  = 1'b0;     // Normal
+    assign m_axi_arqos   = 4'h0;     // No QoS
 
     // Sequential logic
     always @(posedge i_clk) begin
@@ -132,11 +132,11 @@ module simple_axi_master #(
                 r_rw    <= i_rw;
             end
 
-            if (r_state == S_R_READ_DATA_LAST && i_axi_rvalid) begin
-                o_rdata <= i_axi_rdata;
+            if (r_state == S_R_READ_DATA_LAST && m_axi_rvalid) begin
+                o_rdata <= m_axi_rdata;
             end
 
-            if (r_state == S_W_SET_DATA_LAST && i_axi_wready) begin
+            if (r_state == S_W_SET_DATA_LAST && m_axi_wready) begin
                 r_wlast <= 1'b1;
             end else if (r_state == S_W_RET) begin
                 r_wlast <= 1'b0;
@@ -147,11 +147,11 @@ module simple_axi_master #(
     // Combinatorial logic
     always @(*) begin
         r_next_state  = r_state;
-        o_axi_awvalid = 1'b0;
-        o_axi_wvalid  = 1'b0;
-        o_axi_bready  = 1'b0;
-        o_axi_arvalid = 1'b0;
-        o_axi_rready  = 1'b0;
+        m_axi_awvalid = 1'b0;
+        m_axi_wvalid  = 1'b0;
+        m_axi_bready  = 1'b0;
+        m_axi_arvalid = 1'b0;
+        m_axi_rready  = 1'b0;
         o_done        = 1'b0;
         o_wait        = 1'b0;
         o_error       = 1'b0;
@@ -210,71 +210,71 @@ module simple_axi_master #(
         // Write path
         S_W_SET_ADDR: begin
             r_next_state  = S_W_ADDR_WAIT_RDY;
-            o_axi_awvalid = 1'b1;
+            m_axi_awvalid = 1'b1;
             o_wait = 1'b1;
         end
 
         S_W_ADDR_WAIT_RDY: begin
             o_wait = 1'b1;
-            o_axi_awvalid = 1'b1;
+            m_axi_awvalid = 1'b1;
 
-            if (i_axi_awready) begin
+            if (m_axi_awready) begin
                 r_next_state = S_W_SET_DATA_LAST;
             end
         end
 
         S_W_SET_DATA_LAST: begin
             o_wait = 1'b1;
-            o_axi_wvalid = 1'b1;
+            m_axi_wvalid = 1'b1;
 
-            if (i_axi_wready) begin
+            if (m_axi_wready) begin
                r_next_state = S_W_RET;
-               o_axi_bready = 1'b1;
+               m_axi_bready = 1'b1;
             end
         end
 
         S_W_RET: begin
             o_wait = 1'b1;
 
-            if (i_axi_bvalid) begin
+            if (m_axi_bvalid) begin
                 r_next_state = S_IDLE_DONE;
 
                 o_wait = 1'b0;
                 o_done = 1'b1;
 
-                o_error   = (i_axi_bresp != `RESP_OKAY);
-                o_invalid = (i_axi_bresp == `RESP_DECERR);
+                o_error   = (m_axi_bresp != `RESP_OKAY);
+                o_invalid = (m_axi_bresp == `RESP_DECERR);
             end
         end
 
         // Read path
         S_R_SET_ADDR: begin
             r_next_state  = S_R_ADDR_WAIT_RDY;
-            o_axi_arvalid = 1'b1;
+            m_axi_arvalid = 1'b1;
             o_wait = 1'b1;
         end
 
         S_R_ADDR_WAIT_RDY: begin
             o_wait = 1'b1;
-            o_axi_arvalid = 1'b1;
+            m_axi_arvalid = 1'b1;
 
-            if (i_axi_arready) begin
+            if (m_axi_arready) begin
                 r_next_state = S_R_READ_DATA_LAST;
             end
         end
 
         S_R_READ_DATA_LAST: begin
             o_wait = 1'b1;
-            o_axi_rready = 1'b1;
+            m_axi_rready = 1'b1;
 
-            if (i_axi_rvalid) begin
+            if (m_axi_rvalid) begin
                 r_next_state = S_IDLE_DONE;
 
                 o_wait = 1'b0;
                 o_done = 1'b1;
 
-                o_error   = (i_axi_rresp != `RESP_OKAY);
-                o_invalid = (i_axi_rresp == `RESP_DECERR);
+                o_error   = (m_axi_rresp != `RESP_OKAY);
+                o_invalid = (m_axi_rresp == `RESP_DECERR);
             end
         end
 
