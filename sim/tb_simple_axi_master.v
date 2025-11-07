@@ -198,7 +198,7 @@ module tb_simple_axi_master();
         // Test 1: Fast write byte
         $display("\n[Test 1] Write byte at offset 2 (fast)");
         slave_delay = 0;
-        addr = 32'h1000_0002; wsize = 3'b000; wdata = 64'h00000000000000AA; rw = 2'b01;
+        addr = 32'h0000_0002; wsize = 3'b000; wdata = 64'h00000000000000AA; rw = 2'b01;
         repeat (2) @(posedge clk);
         wait(done); $display("[%0t] Done!", $time);
         rw = 2'b00; clear_done = 1; @(posedge clk); clear_done = 0; #20;
@@ -206,7 +206,7 @@ module tb_simple_axi_master();
         // Test 2: Fast write word
         $display("\n[Test 2] Write word at offset 0 (fast)");
         slave_delay = 0;
-        addr = 32'h1000_0000; wsize = 3'b010; wdata = 64'h00000000DEADBEEF; rw = 2'b01;
+        addr = 32'h0000_0000; wsize = 3'b010; wdata = 64'h00000000DEADBEEF; rw = 2'b01;
         repeat (2) @(posedge clk);
         wait(done); $display("[%0t] Done!", $time);
         rw = 2'b00; clear_done = 1; @(posedge clk); clear_done = 0; #20;
@@ -214,7 +214,7 @@ module tb_simple_axi_master();
         // Test 3: Fast write dword
         $display("\n[Test 3] Write dword (fast)");
         slave_delay = 0;
-        addr = 32'h1000_0000; wsize = 3'b011; wdata = 64'h1122334455667788; rw = 2'b01;
+        addr = 32'h0000_0000; wsize = 3'b011; wdata = 64'h1122334455667788; rw = 2'b01;
         repeat (2) @(posedge clk);
         wait(done); $display("[%0t] Done!", $time);
         rw = 2'b00; clear_done = 1; @(posedge clk); clear_done = 0; #20;
@@ -222,7 +222,7 @@ module tb_simple_axi_master();
         // Test 4: Fast read
         $display("\n[Test 4] Read dword (fast)");
         slave_delay = 0;
-        addr = 32'h1000_0000; wsize = 3'b011; rw = 2'b10;
+        addr = 32'h0000_0000; wsize = 3'b011; rw = 2'b10;
         repeat (2) @(posedge clk);
         wait(done); $display("[%0t] Data: 0x%016x", $time, rdata);
         rw = 2'b00; clear_done = 1; @(posedge clk); clear_done = 0; #20;
@@ -230,7 +230,7 @@ module tb_simple_axi_master();
         // Test 5: Slow write (2 cycle delay)
         $display("\n[Test 5] Write byte (2 cycle delay)");
         slave_delay = 2;
-        addr = 32'h2000_0000; wsize = 3'b000; wdata = 64'h000000000000_1111; rw = 2'b01;
+        addr = 32'h0000_0000; wsize = 3'b000; wdata = 64'h000000000000_1111; rw = 2'b01;
         repeat (2) @(posedge clk);
         wait(done); $display("[%0t] Done!", $time);
         rw = 2'b00; clear_done = 1; @(posedge clk); clear_done = 0; #20;
@@ -238,7 +238,7 @@ module tb_simple_axi_master();
         // Test 6: Very slow read (5 cycle delay)
         $display("\n[Test 6] Read byte (5 cycle delay)");
         slave_delay = 5;
-        addr = 32'h2000_0000; wsize = 3'b000; rw = 2'b10;
+        addr = 32'h0000_0000; wsize = 3'b000; rw = 2'b10;
         repeat (2) @(posedge clk);
         wait(done); $display("[%0t] Data: 0x%016x", $time, rdata);
         rw = 2'b00; clear_done = 1; @(posedge clk); clear_done = 0; #20;
@@ -246,7 +246,7 @@ module tb_simple_axi_master();
         // Test 7: Slow write word
         $display("\n[Test 7] Write word (3 cycle delay)");
         slave_delay = 3;
-        addr = 32'h3000_0000; wsize = 3'b010; wdata = 64'h00000000_AABBCCDD; rw = 2'b01;
+        addr = 32'h0000_0000; wsize = 3'b010; wdata = 64'h00000000_AABBCCDD; rw = 2'b01;
         repeat (2) @(posedge clk);
         wait(done); $display("[%0t] Done!", $time);
         rw = 2'b00; clear_done = 1; @(posedge clk); clear_done = 0; #20;
@@ -254,7 +254,7 @@ module tb_simple_axi_master();
         // Test 8: Slow read word
         $display("\n[Test 8] Read word (3 cycle delay)");
         slave_delay = 3;
-        addr = 32'h3000_0001; wsize = 3'b010; rw = 2'b10;
+        addr = 32'h0000_0001; wsize = 3'b010; rw = 2'b10;
         repeat (2) @(posedge clk);
         wait(done); $display("[%0t] Data: 0x%016x", $time, rdata);
         rw = 2'b00; clear_done = 1; @(posedge clk); clear_done = 0; #20;
