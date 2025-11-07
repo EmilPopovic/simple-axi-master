@@ -98,7 +98,7 @@ module simple_axi_master(
     assign size_mask = (r_size == `SIZE_BYTE) ? 64'h00000000_000000FF :
                        (r_size == `SIZE_HALF) ? 64'h00000000_0000FFFF :
                        (r_size == `SIZE_WORD) ? 64'h00000000_FFFFFFFF :
-                                           64'hFFFFFFFF_FFFFFFFF;
+                                                64'hFFFFFFFF_FFFFFFFF;
 
     // AXI constants
     assign m_axi_awaddr  = r_addr;
@@ -128,7 +128,7 @@ module simple_axi_master(
             `SIZE_HALF:  m_axi_wstrb = 8'b0000_0011 << (byte_offset);  // 2 bytes
             `SIZE_WORD:  m_axi_wstrb = 8'b0000_1111 << (byte_offset);  // 4 bytes
             `SIZE_DWORD: m_axi_wstrb = 8'b1111_1111;                   // 8 bytes
-            default: m_axi_wstrb = 8'b0000_0000;
+            default:     m_axi_wstrb = 8'b0000_0000;
         endcase
     end
 
