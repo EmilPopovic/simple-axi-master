@@ -9,14 +9,19 @@
 `define RESP_SLVERR 2'b10
 `define RESP_DECERR 2'b11
 
+`define SIZE_BYTE  3'b000
+`define SIZE_HALF  3'b001
+`define SIZE_WORD  3'b010
+`define SIZE_DWORD 3'b011
+
 module simple_axi_master(
     input  wire        i_clk,  // Global clock
     input  wire        i_rst,  // Global reset
 
     // Internal bus side
+    input  wire [2:0]  i_size,        // 0-byte, 1-half, 2-word, 3-dword
     input  wire [31:0] i_addr,        // Address bus
     input  wire [63:0] i_wdata,       // Write data bus
-    input  wire [2:0]  i_wsize,       // 0-byte, 1-half, 2-word, 3-dword
     output reg  [63:0] o_rdata,       // Read data bus
     input  wire [1:0]  i_rw,          // 00-idle, 01-write, 10-read, 11-reserved
     output reg         o_wait,        // Transfer active
@@ -84,14 +89,20 @@ module simple_axi_master(
     reg [3:0]  r_next_state;
     reg [31:0] r_addr;
     reg [63:0] r_wdata;
-    reg [2:0]  r_wsize;
+    reg [2:0]  r_size;
     reg [1:0]  r_rw;
 
     wire [2:0] byte_offset = r_addr[2:0];
 
+    wire [63:0] size_mask;
+    assign size_mask = (r_size == `SIZE_BYTE) ? 64'h00000000_000000FF :
+                       (r_size == `SIZE_HALF) ? 64'h00000000_0000FFFF :
+                       (r_size == `SIZE_WORD) ? 64'h00000000_FFFFFFFF :
+                                           64'hFFFFFFFF_FFFFFFFF;
+
     // AXI constants
     assign m_axi_awaddr  = r_addr;
-    assign m_axi_awsize  = r_wsize;
+    assign m_axi_awsize  = r_size;
     assign m_axi_awburst = 2'b01;    // INCR
     assign m_axi_awcache = 4'b0011;  // Bufferable
     assign m_axi_awprot  = 3'b000;   // Unprivileged
@@ -102,7 +113,7 @@ module simple_axi_master(
     assign m_axi_wdata   = r_wdata << (byte_offset * 8);
 
     assign m_axi_araddr  = r_addr;
-    assign m_axi_arsize  = r_wsize;
+    assign m_axi_arsize  = r_size;
     assign m_axi_arburst = 2'b01;    // INCR
     assign m_axi_arcache = 4'b0011;  // Bufferable
     assign m_axi_arprot  = 3'b000;   // Unprivileged
@@ -112,11 +123,11 @@ module simple_axi_master(
 
     // Strobe calculation
     always @(*) begin
-        case(i_wsize)
-            3'b000: m_axi_wstrb = 8'b0000_0001 << (byte_offset);  // 1 byte
-            3'b001: m_axi_wstrb = 8'b0000_0011 << (byte_offset);  // 2 bytes
-            3'b010: m_axi_wstrb = 8'b0000_1111 << (byte_offset);  // 4 bytes
-            3'b011: m_axi_wstrb = 8'b1111_1111;                   // 8 bytes
+        case(i_size)
+            `SIZE_BYTE:  m_axi_wstrb = 8'b0000_0001 << (byte_offset);  // 1 byte
+            `SIZE_HALF:  m_axi_wstrb = 8'b0000_0011 << (byte_offset);  // 2 bytes
+            `SIZE_WORD:  m_axi_wstrb = 8'b0000_1111 << (byte_offset);  // 4 bytes
+            `SIZE_DWORD: m_axi_wstrb = 8'b1111_1111;                   // 8 bytes
             default: m_axi_wstrb = 8'b0000_0000;
         endcase
     end
@@ -127,7 +138,7 @@ module simple_axi_master(
             r_state <= S_IDLE;
             r_addr  <= 32'b0;
             r_wdata <= 64'b0;
-            r_wsize <= 2'b0;
+            r_size  <= 2'b0;
             r_rw    <= 2'b00;
             o_rdata <= 64'b0;
         end else begin
@@ -136,12 +147,12 @@ module simple_axi_master(
             if ((r_state == S_IDLE || r_state == S_IDLE_DONE) && i_rw != `RW_NOP) begin
                 r_addr  <= i_addr;
                 r_wdata <= i_wdata;
-                r_wsize <= i_wsize;
+                r_size  <= i_size;
                 r_rw    <= i_rw;
             end
 
             if (r_state == S_R_READ_DATA_LAST && m_axi_rvalid) begin
-                o_rdata <= m_axi_rdata >> (byte_offset * 8);
+                o_rdata <= m_axi_rdata >> (byte_offset * 8) & size_mask;
             end
         end
     end

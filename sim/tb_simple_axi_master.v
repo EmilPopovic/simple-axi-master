@@ -50,7 +50,7 @@ module tb_simple_axi_master();
         .i_clk(clk),
         .i_rst(rst),
         .i_addr(addr),
-        .i_wsize(wsize),
+        .i_size(wsize),
         .i_wdata(wdata),
         .o_rdata(rdata),
         .i_rw(rw),
