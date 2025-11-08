@@ -18,17 +18,17 @@ module simple_axi_master(
     input  wire        i_clk,  // Global clock
     input  wire        i_rst,  // Global reset
 
-    // Internal bus side
-    input  wire [2:0]  i_size,        // 0-byte, 1-half, 2-word, 3-dword
-    input  wire [31:0] i_addr,        // Address bus
-    input  wire [63:0] i_wdata,       // Write data bus
-    output reg  [63:0] o_rdata,       // Read data bus
-    input  wire [1:0]  i_rw,          // 00-idle, 01-write, 10-read, 11-reserved
-    output reg         o_wait,        // Transfer active
-    output reg         o_done,        // 1 after completing transfer
-    input  wire        i_clear_done,  // Clear done status (sets done to 0)
-    output reg         o_invalid,     // Requested invalid address
-    output reg         o_error,       // AXI returned error
+    // Host bus
+    input  wire [2:0]  i_size,     // 0-byte, 1-half, 2-word, 3-dword
+    input  wire [31:0] i_addr,     // Address bus
+    input  wire [63:0] i_wdata,    // Write data bus
+    output reg  [63:0] o_rdata,    // Read data bus
+    input  wire [1:0]  i_rw,       // 00-idle, 01-write, 10-read, 11-reserved
+    output reg         o_wait,     // Transfer active
+    input  wire        i_clear,    // Clear done, error and invalid
+    output reg         o_done,     // 1 after completing transfer
+    output reg         o_error,    // Transaction failed
+    output reg         o_invalid,  // Requested invalid address
 
     // Write Address (AW) channel signals
     output reg         m_axi_awvalid,
@@ -74,15 +74,17 @@ module simple_axi_master(
     input  wire [1:0]  m_axi_rresp
 );
     // States
-    localparam S_IDLE             = 4'b0000;  // No active transaction
-    localparam S_IDLE_DONE        = 4'b0001;  // Idle with done flag set
-    localparam S_W_SET_ADDR       = 4'b0010;  // Set write address
-    localparam S_W_ADDR_WAIT_RDY  = 4'b0011;  // Wait for write address received
-    localparam S_W_SET_DATA_LAST  = 4'b0100;  // Send last data
-    localparam S_W_RET            = 4'b0101;  // Return write response
-    localparam S_R_SET_ADDR       = 4'b0110;  // Set read address
-    localparam S_R_ADDR_WAIT_RDY  = 4'b0111;  // Wait for read address received
-    localparam S_R_READ_DATA_LAST = 4'b1000;  // Read last data and return
+    localparam S_IDLE        = 4'b0000;  // No active transaction
+    localparam S_DONE        = 4'b0001;  // Idle done with no error
+    localparam S_ERROR       = 4'b0010;  // Idle done where last returned error
+    localparam S_INVALID     = 4'b0011;  // Idle done where last was invalid
+    localparam S_W_SET_ADDR  = 4'b0100;  // Set write address
+    localparam S_W_ADDR_WAIT = 4'b0101;  // Wait for write address received
+    localparam S_W_DATA_LAST = 4'b0110;  // Send last data
+    localparam S_W_RET       = 4'b0111;  // Return write response
+    localparam S_R_SET_ADDR  = 4'b1000;  // Set read address
+    localparam S_R_ADDR_WAIT = 4'b1001;  // Wait for read address received
+    localparam S_R_DATA_LAST = 4'b1010;  // Read last data and return
 
     // Internal registers
     reg [3:0]  r_state;
@@ -92,13 +94,25 @@ module simple_axi_master(
     reg [2:0]  r_size;
     reg [1:0]  r_rw;
 
-    wire [2:0] byte_offset = r_addr[2:0];
-
+    // Alignment handling
     wire [63:0] size_mask;
     assign size_mask = (r_size == `SIZE_BYTE) ? 64'h00000000_000000FF :
                        (r_size == `SIZE_HALF) ? 64'h00000000_0000FFFF :
                        (r_size == `SIZE_WORD) ? 64'h00000000_FFFFFFFF :
                                                 64'hFFFFFFFF_FFFFFFFF;
+
+    assign m_axi_wstrb = (r_size == `SIZE_BYTE)  ? 8'b0000_0001 :
+                         (r_size == `SIZE_HALF)  ? 8'b0000_0011 :
+                         (r_size == `SIZE_WORD)  ? 8'b0000_1111 :
+                         (r_size == `SIZE_DWORD) ? 8'b1111_1111 :
+                                                   8'b0000_0000;
+
+    wire misaligned_request;
+    assign misaligned_request = (i_rw != `RW_NOP) && (
+        ((i_size == `SIZE_HALF) && (i_addr[0] != 1'b0)) ||
+        ((i_size == `SIZE_WORD) && (i_addr[1:0] != 2'b00)) ||
+        ((i_size == `SIZE_DWORD) && (i_addr[2:0] != 3'b000))
+    );
 
     // AXI constants
     assign m_axi_awaddr  = r_addr;
@@ -110,7 +124,7 @@ module simple_axi_master(
     assign m_axi_awlock  = 1'b0;     // Normal
     assign m_axi_awqos   = 4'h0;     // No QoS
 
-    assign m_axi_wdata   = r_wdata << (byte_offset * 8);
+    assign m_axi_wdata   = r_wdata;
 
     assign m_axi_araddr  = r_addr;
     assign m_axi_arsize  = r_size;
@@ -120,17 +134,6 @@ module simple_axi_master(
     assign m_axi_arlen   = 8'h0;     // Single beat
     assign m_axi_arlock  = 1'b0;     // Normal
     assign m_axi_arqos   = 4'h0;     // No QoS
-
-    // Strobe calculation
-    always @(*) begin
-        case(i_size)
-            `SIZE_BYTE:  m_axi_wstrb = 8'b0000_0001 << (byte_offset);  // 1 byte
-            `SIZE_HALF:  m_axi_wstrb = 8'b0000_0011 << (byte_offset);  // 2 bytes
-            `SIZE_WORD:  m_axi_wstrb = 8'b0000_1111 << (byte_offset);  // 4 bytes
-            `SIZE_DWORD: m_axi_wstrb = 8'b1111_1111;                   // 8 bytes
-            default:     m_axi_wstrb = 8'b0000_0000;
-        endcase
-    end
 
     // Sequential logic
     always @(posedge i_clk) begin
@@ -144,15 +147,15 @@ module simple_axi_master(
         end else begin
             r_state <= r_next_state;
 
-            if ((r_state == S_IDLE || r_state == S_IDLE_DONE) && i_rw != `RW_NOP) begin
+            if ((r_state < 2) && i_rw != `RW_NOP) begin
                 r_addr  <= i_addr;
                 r_wdata <= i_wdata;
                 r_size  <= i_size;
                 r_rw    <= i_rw;
             end
 
-            if (r_state == S_R_READ_DATA_LAST && m_axi_rvalid) begin
-                o_rdata <= m_axi_rdata >> (byte_offset * 8) & size_mask;
+            if (r_state == S_R_DATA_LAST && m_axi_rvalid) begin
+                o_rdata <= m_axi_rdata & size_mask;
             end
         end
     end
@@ -160,6 +163,7 @@ module simple_axi_master(
     // Combinatorial logic
     always @(*) begin
         r_next_state  = r_state;
+        o_wait        = (r_state >= 4);
         m_axi_awvalid = 1'b0;
         m_axi_wvalid  = 1'b0;
         m_axi_wlast   = 1'b0;
@@ -167,81 +171,47 @@ module simple_axi_master(
         m_axi_arvalid = 1'b0;
         m_axi_rready  = 1'b0;
         o_done        = 1'b0;
-        o_wait        = 1'b0;
         o_error       = 1'b0;
         o_invalid     = 1'b0;
 
         case (r_state)
 
         // Idle states
-        S_IDLE: begin
-            case (i_rw)
-
-            `RW_WRITE: begin
-                r_next_state = S_W_SET_ADDR;
-                o_wait = 1'b1;
-            end
-
-            `RW_READ: begin
-                r_next_state = S_R_SET_ADDR;
-                o_wait = 1'b1;
-            end
-
-            default: begin
-                r_next_state = S_IDLE;
-                o_wait = 1'b0;
-            end
-
-            endcase
-        end
-
-        S_IDLE_DONE: begin
-            case (i_rw)
-
-            `RW_WRITE: begin
-                r_next_state = S_W_SET_ADDR;
-                o_wait = 1'b1;
-            end
-
-            `RW_READ: begin
-                r_next_state = S_R_SET_ADDR;
-                o_wait = 1'b1;
-            end
-
-            default: begin
-                o_wait = 1'b0;
-                if (i_clear_done) begin
-                    r_next_state = S_IDLE;
-                    o_done = 1'b0;
-                end else begin
-                    r_next_state = S_IDLE_DONE;
+        S_IDLE, S_DONE, S_ERROR, S_INVALID: begin
+            if (i_rw == `RW_WRITE || i_rw == `RW_READ) begin
+                if (misaligned_request) begin
+                    r_next_state = S_INVALID;
                     o_done = 1'b1;
+                    o_error = 1'b1;
+                    o_invalid = 1'b1;
+                end else begin
+                    r_next_state = (i_rw == `RW_WRITE) ? S_W_SET_ADDR : S_R_SET_ADDR;
+                    r_next_state = S_W_SET_ADDR;
+                    o_wait = 1'b1;
                 end
+            end else begin
+                r_next_state = (i_clear) ? S_IDLE : r_state;
+                o_done = (i_clear) ? 1'b0 : (r_state != S_IDLE);
+                o_error = (i_clear) ? 1'b0 : (r_state == S_ERROR || r_state == S_INVALID);
+                o_invalid = (i_clear) ? 1'b0 : (r_state == S_INVALID);
             end
-
-            endcase
         end
 
         // Write path
         S_W_SET_ADDR: begin
-            r_next_state  = S_W_ADDR_WAIT_RDY;
+            r_next_state  = S_W_ADDR_WAIT;
             m_axi_awvalid = 1'b1;
-            o_wait = 1'b1;
         end
 
-        S_W_ADDR_WAIT_RDY: begin
-            o_wait = 1'b1;
+        S_W_ADDR_WAIT: begin
             m_axi_awvalid = 1'b1;
-
             if (m_axi_awready) begin
-                r_next_state = S_W_SET_DATA_LAST;
+                r_next_state = S_W_DATA_LAST;
             end
         end
 
-        S_W_SET_DATA_LAST: begin
-            o_wait = 1'b1;
+        S_W_DATA_LAST: begin
             m_axi_wvalid = 1'b1;
-
             if (m_axi_wready) begin
                r_next_state = S_W_RET;
                m_axi_wlast  = 1'b1;
@@ -249,56 +219,43 @@ module simple_axi_master(
         end
 
         S_W_RET: begin
-            o_wait = 1'b1;
             m_axi_bready = 1'b1;
-
             if (m_axi_bvalid) begin
-                if (i_clear_done) begin
-                    r_next_state = S_IDLE;
-                end else begin
-                    r_next_state = S_IDLE_DONE;
-                end
-
                 o_wait = 1'b0;
                 o_done = 1'b1;
-
-                o_error   = (m_axi_bresp != `RESP_OKAY);
+                o_error = (m_axi_bresp != `RESP_OKAY);
                 o_invalid = (m_axi_bresp == `RESP_DECERR);
+                r_next_state = (i_clear) ? S_IDLE :
+                               (m_axi_bresp == `RESP_DECERR) ? S_INVALID :
+                               (m_axi_bresp != `RESP_OKAY) ? S_ERROR :
+                                S_DONE;
             end
         end
 
         // Read path
         S_R_SET_ADDR: begin
-            r_next_state  = S_R_ADDR_WAIT_RDY;
+            r_next_state  = S_R_ADDR_WAIT;
             m_axi_arvalid = 1'b1;
-            o_wait = 1'b1;
         end
 
-        S_R_ADDR_WAIT_RDY: begin
-            o_wait = 1'b1;
+        S_R_ADDR_WAIT: begin
             m_axi_arvalid = 1'b1;
-
             if (m_axi_arready) begin
-                r_next_state = S_R_READ_DATA_LAST;
+                r_next_state = S_R_DATA_LAST;
             end
         end
 
-        S_R_READ_DATA_LAST: begin
-            o_wait = 1'b1;
+        S_R_DATA_LAST: begin
             m_axi_rready = 1'b1;
-
             if (m_axi_rvalid) begin
-                if (i_clear_done) begin
-                    r_next_state = S_IDLE;
-                end else begin
-                    r_next_state = S_IDLE_DONE;
-                end
-
                 o_wait = 1'b0;
                 o_done = 1'b1;
-
-                o_error   = (m_axi_rresp != `RESP_OKAY);
+                o_error = (m_axi_rresp != `RESP_OKAY);
                 o_invalid = (m_axi_rresp == `RESP_DECERR);
+                r_next_state = (i_clear) ? S_IDLE :
+                               (m_axi_rresp == `RESP_DECERR) ? S_INVALID :
+                               (m_axi_rresp != `RESP_OKAY) ? S_ERROR :
+                                S_DONE;
             end
         end
 
