@@ -158,7 +158,7 @@ always_ff @(posedge clk) begin
         if (axi_awvalid && !axi_awready) begin
             if (slave_delay_counter == 0) begin
                 axi_awready <= 1;
-                write_addr  <= axi_awaddr;
+                write_addr  <= axi_awaddr & ~32'h7;
             end
         end else begin
             axi_awready <= 0;
@@ -195,7 +195,7 @@ always_ff @(posedge clk) begin
         if (axi_arvalid && !axi_arready) begin
             if (slave_delay_counter == 0) begin
                 axi_arready <= 1;
-                read_addr   <= axi_araddr;
+                read_addr   <= axi_araddr & ~32'h7;
             end
         end else begin
             axi_arready <= 0;
@@ -206,7 +206,6 @@ always_ff @(posedge clk) begin
             if (slave_delay_counter == 0) begin
                 axi_rvalid <= 1;
                 if (error_response == 2'b00) begin
-                    // Read 8 bytes starting from address
                     axi_rdata <= {
                         mem[read_addr+7], mem[read_addr+6],
                         mem[read_addr+5], mem[read_addr+4],
@@ -219,7 +218,7 @@ always_ff @(posedge clk) begin
                 axi_rlast <= 1;
                 axi_rresp <= error_response;
                 $display("  [%0t] AXI Read: addr=0x%08X, data=0x%016X",
-                            $time, read_addr, (error_response == 2'b00) ? mem[read_addr[6:3]] : 64'h0);
+                            $time, read_addr, (error_response == 2'b00) ? axi_rdata : 64'h0);
             end
         end else if (axi_rvalid) begin
             axi_rvalid <= 0;
