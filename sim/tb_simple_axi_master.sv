@@ -106,6 +106,8 @@ always #5 clk = ~clk;
 logic [7:0] mem [0:127];
 logic [31:0] read_addr = 32'b0;
 logic [31:0] write_addr = 32'b0;
+logic [31:0] read_addr_orig = 32'b0;  // Original unaligned address for display
+logic [31:0] write_addr_orig = 32'b0; // Original unaligned address for display
 int slave_delay_counter;
 int slave_delay_load;
 logic slave_delay_reload;
@@ -158,7 +160,8 @@ always_ff @(posedge clk) begin
         if (axi_awvalid && !axi_awready) begin
             if (slave_delay_counter == 0) begin
                 axi_awready <= 1;
-                write_addr  <= axi_awaddr & ~32'h7;
+                write_addr_orig <= axi_awaddr;              // Store original for display
+                write_addr  <= axi_awaddr & ~32'h7;         // Align to 8-byte boundary
             end
         end else begin
             axi_awready <= 0;
@@ -174,8 +177,8 @@ always_ff @(posedge clk) begin
                         if (axi_wstrb[k]) mem[write_addr + k] = axi_wdata[k*8 +: 8];
                     end
                 end
-                $display("  [%0t] AXI Write: addr=0x%08X, strb=0x%02X, data=0x%016X",
-                            $time, write_addr, axi_wstrb, axi_wdata);
+                $display("  [%0t] AXI Write: addr=0x%08X (aligned=0x%08X), strb=0x%02X, data=0x%016X",
+                            $time, write_addr_orig, write_addr, axi_wstrb, axi_wdata);
             end
         end else begin
             axi_wready <= 0;
@@ -195,7 +198,8 @@ always_ff @(posedge clk) begin
         if (axi_arvalid && !axi_arready) begin
             if (slave_delay_counter == 0) begin
                 axi_arready <= 1;
-                read_addr   <= axi_araddr & ~32'h7;
+                read_addr_orig <= axi_araddr;               // Store original for display
+                read_addr   <= axi_araddr & ~32'h7;         // Align to 8-byte boundary
             end
         end else begin
             axi_arready <= 0;
@@ -217,8 +221,8 @@ always_ff @(posedge clk) begin
                 end
                 axi_rlast <= 1;
                 axi_rresp <= error_response;
-                $display("  [%0t] AXI Read: addr=0x%08X, data=0x%016X",
-                            $time, read_addr, (error_response == 2'b00) ? axi_rdata : 64'h0);
+                $display("  [%0t] AXI Read:  addr=0x%08X (aligned=0x%08X), data=0x%016X",
+                            $time, read_addr_orig, read_addr, (error_response == 2'b00) ? axi_rdata : 64'h0);
             end
         end else if (axi_rvalid) begin
             axi_rvalid <= 0;

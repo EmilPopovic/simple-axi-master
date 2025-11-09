@@ -116,7 +116,10 @@ wire misaligned_request = (i_rw != `RW_NOP) && (
 // AXI constants
 assign m_axi_awaddr  = r_addr;
 assign m_axi_awsize  = r_size;
-assign m_axi_awvalid = ((r_state < 4 && i_rw == `RW_WRITE)|| r_state == S_W_SET_ADDR || r_state == S_W_ADDR_WAIT);
+assign m_axi_awvalid = r_state < 4 && i_rw == `RW_WRITE && !o_error ||
+                       r_state == S_W_SET_ADDR ||
+                       r_state == S_W_ADDR_WAIT;
+
 assign m_axi_awburst = 2'b01;    // INCR
 assign m_axi_awcache = 4'b0011;  // Bufferable
 assign m_axi_awprot  = 3'b000;   // Unprivileged
@@ -128,7 +131,10 @@ assign m_axi_wdata   = r_wdata << (byte_offset * 8);
 
 assign m_axi_araddr  = r_addr;
 assign m_axi_arsize  = r_size;
-assign m_axi_arvalid = ((r_state < 4 && i_rw == `RW_READ)|| r_state == S_R_SET_ADDR || r_state == S_R_ADDR_WAIT);
+assign m_axi_arvalid = r_state < 4 && i_rw == `RW_READ && !o_error ||
+                       r_state == S_R_SET_ADDR ||
+                       r_state == S_R_ADDR_WAIT;
+
 assign m_axi_arburst = 2'b01;    // INCR
 assign m_axi_arcache = 4'b0011;  // Bufferable
 assign m_axi_arprot  = 3'b000;   // Unprivileged
@@ -223,7 +229,7 @@ always @(*) begin
             r_next_state = (i_clear) ? S_IDLE :
                            (m_axi_bresp == `RESP_DECERR) ? S_INVALID :
                            (m_axi_bresp != `RESP_OKAY) ? S_ERROR :
-                            S_DONE;
+                           S_DONE;
         end
     end
 
@@ -246,7 +252,7 @@ always @(*) begin
             r_next_state = (i_clear) ? S_IDLE :
                            (m_axi_rresp == `RESP_DECERR) ? S_INVALID :
                            (m_axi_rresp != `RESP_OKAY) ? S_ERROR :
-                            S_DONE;
+                           S_DONE;
         end
     end
 
