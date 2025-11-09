@@ -47,7 +47,7 @@ module simple_axi_master(
     input  wire        m_axi_wready,
     output reg         m_axi_wlast,
     output wire [63:0] m_axi_wdata,
-    output reg  [7:0]  m_axi_wstrb,
+    output wire [7:0]  m_axi_wstrb,
 
     // Write Response (B) channel signals
     input  wire        m_axi_bvalid,
@@ -98,15 +98,15 @@ reg [1:0]  r_rw;
 // Alignment handling
 wire [63:0] size_mask;
 assign size_mask = (r_size == `SIZE_BYTE) ? 64'h00000000_000000FF :
-                    (r_size == `SIZE_HALF) ? 64'h00000000_0000FFFF :
-                    (r_size == `SIZE_WORD) ? 64'h00000000_FFFFFFFF :
+                   (r_size == `SIZE_HALF) ? 64'h00000000_0000FFFF :
+                   (r_size == `SIZE_WORD) ? 64'h00000000_FFFFFFFF :
                                             64'hFFFFFFFF_FFFFFFFF;
 
 assign m_axi_wstrb = (r_size == `SIZE_BYTE)  ? 8'b0000_0001 :
-                        (r_size == `SIZE_HALF)  ? 8'b0000_0011 :
-                        (r_size == `SIZE_WORD)  ? 8'b0000_1111 :
-                        (r_size == `SIZE_DWORD) ? 8'b1111_1111 :
-                                                8'b0000_0000;
+                     (r_size == `SIZE_HALF)  ? 8'b0000_0011 :
+                     (r_size == `SIZE_WORD)  ? 8'b0000_1111 :
+                     (r_size == `SIZE_DWORD) ? 8'b1111_1111 :
+                                               8'b0000_0000;
 
 wire misaligned_request;
 assign misaligned_request = (i_rw != `RW_NOP) && (
@@ -227,8 +227,8 @@ always @(*) begin
             o_error = (m_axi_bresp != `RESP_OKAY);
             o_invalid = (m_axi_bresp == `RESP_DECERR);
             r_next_state = (i_clear) ? S_IDLE :
-                            (m_axi_bresp == `RESP_DECERR) ? S_INVALID :
-                            (m_axi_bresp != `RESP_OKAY) ? S_ERROR :
+                           (m_axi_bresp == `RESP_DECERR) ? S_INVALID :
+                           (m_axi_bresp != `RESP_OKAY) ? S_ERROR :
                             S_DONE;
         end
     end
@@ -254,8 +254,8 @@ always @(*) begin
             o_error = (m_axi_rresp != `RESP_OKAY);
             o_invalid = (m_axi_rresp == `RESP_DECERR);
             r_next_state = (i_clear) ? S_IDLE :
-                            (m_axi_rresp == `RESP_DECERR) ? S_INVALID :
-                            (m_axi_rresp != `RESP_OKAY) ? S_ERROR :
+                           (m_axi_rresp == `RESP_DECERR) ? S_INVALID :
+                           (m_axi_rresp != `RESP_OKAY) ? S_ERROR :
                             S_DONE;
         end
     end
