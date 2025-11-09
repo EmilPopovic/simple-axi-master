@@ -187,7 +187,6 @@ always @(*) begin
                 o_invalid = 1'b1;
             end else begin
                 r_next_state = (i_rw == `RW_WRITE) ? S_W_SET_ADDR : S_R_SET_ADDR;
-                r_next_state = S_W_SET_ADDR;
                 o_wait = 1'b1;
             end
         end else begin
