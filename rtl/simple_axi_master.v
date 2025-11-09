@@ -147,7 +147,7 @@ module simple_axi_master(
         end else begin
             r_state <= r_next_state;
 
-            if ((r_state < 2) && i_rw != `RW_NOP) begin
+            if (r_state < 4 && i_rw != `RW_NOP) begin
                 r_addr  <= i_addr;
                 r_wdata <= i_wdata;
                 r_size  <= i_size;
