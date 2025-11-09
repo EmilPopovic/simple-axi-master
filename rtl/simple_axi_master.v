@@ -22,7 +22,7 @@ module simple_axi_master(
     input  wire [2:0]  i_size,     // 0-byte, 1-half, 2-word, 3-dword
     input  wire [31:0] i_addr,     // Address bus
     input  wire [63:0] i_wdata,    // Write data bus
-    output reg  [63:0] o_rdata,    // Read data bus
+    output wire [63:0] o_rdata,    // Read data bus
     input  wire [1:0]  i_rw,       // 00-idle, 01-write, 10-read, 11-reserved
     output reg         o_wait,     // Transfer active
     input  wire        i_clear,    // Clear done, error and invalid
@@ -94,6 +94,7 @@ reg [31:0] r_addr;
 reg [63:0] r_wdata;
 reg [2:0]  r_size;
 reg [1:0]  r_rw;
+reg [63:0] r_rdata;
 
 // Alignment handling
 wire [63:0] size_mask;
@@ -142,24 +143,25 @@ always @(posedge i_clk) begin
         r_state <= S_IDLE;
         r_addr  <= 32'b0;
         r_wdata <= 64'b0;
+        r_rdata <= 64'b0;
         r_size  <= 2'b0;
         r_rw    <= 2'b00;
-        o_rdata <= 64'b0;
     end else begin
         r_state <= r_next_state;
-
         if (r_state < 4 && i_rw != `RW_NOP) begin
             r_addr  <= i_addr;
             r_wdata <= i_wdata;
             r_size  <= i_size;
             r_rw    <= i_rw;
         end
-
-        if (r_state == S_R_DATA_LAST && m_axi_rvalid) begin
-            o_rdata <= m_axi_rdata & size_mask;
+        if (m_axi_rready && m_axi_rvalid) begin
+            r_rdata <= m_axi_rdata & size_mask;
         end
     end
 end
+
+// Read data select
+assign o_rdata = (m_axi_rvalid && m_axi_rready) ? m_axi_rdata & size_mask : r_rdata;
 
 // Combinatorial logic
 always @(*) begin
