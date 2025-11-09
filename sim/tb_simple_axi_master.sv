@@ -463,14 +463,13 @@ initial begin
 
     dump_memory("Final Memory State");
 
-    // ================================================
     $display("\n========================================");
     $display("=== All Tests Complete ===");
     $display("========================================\n");
     $finish;
 end
 
-// Timeout watchdog
+// Timeout
 initial begin
     #500000;
     $display("\n*** ERROR: Timeout! ***\n");
