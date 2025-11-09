@@ -73,194 +73,196 @@ module simple_axi_master(
     input  wire [63:0] m_axi_rdata,
     input  wire [1:0]  m_axi_rresp
 );
-    // States
-    localparam S_IDLE        = 4'b0000;  // No active transaction
-    localparam S_DONE        = 4'b0001;  // Idle done with no error
-    localparam S_ERROR       = 4'b0010;  // Idle done where last returned error
-    localparam S_INVALID     = 4'b0011;  // Idle done where last was invalid
-    localparam S_W_SET_ADDR  = 4'b0100;  // Set write address
-    localparam S_W_ADDR_WAIT = 4'b0101;  // Wait for write address received
-    localparam S_W_DATA_LAST = 4'b0110;  // Send last data
-    localparam S_W_RET       = 4'b0111;  // Return write response
-    localparam S_R_SET_ADDR  = 4'b1000;  // Set read address
-    localparam S_R_ADDR_WAIT = 4'b1001;  // Wait for read address received
-    localparam S_R_DATA_LAST = 4'b1010;  // Read last data and return
 
-    // Internal registers
-    reg [3:0]  r_state;
-    reg [3:0]  r_next_state;
-    reg [31:0] r_addr;
-    reg [63:0] r_wdata;
-    reg [2:0]  r_size;
-    reg [1:0]  r_rw;
+// States
+localparam S_IDLE        = 4'b0000;  // No active transaction
+localparam S_DONE        = 4'b0001;  // Idle done with no error
+localparam S_ERROR       = 4'b0010;  // Idle done where last returned error
+localparam S_INVALID     = 4'b0011;  // Idle done where last was invalid
+localparam S_W_SET_ADDR  = 4'b0100;  // Set write address
+localparam S_W_ADDR_WAIT = 4'b0101;  // Wait for write address received
+localparam S_W_DATA_LAST = 4'b0110;  // Send last data
+localparam S_W_RET       = 4'b0111;  // Return write response
+localparam S_R_SET_ADDR  = 4'b1000;  // Set read address
+localparam S_R_ADDR_WAIT = 4'b1001;  // Wait for read address received
+localparam S_R_DATA_LAST = 4'b1010;  // Read last data and return
 
-    // Alignment handling
-    wire [63:0] size_mask;
-    assign size_mask = (r_size == `SIZE_BYTE) ? 64'h00000000_000000FF :
-                       (r_size == `SIZE_HALF) ? 64'h00000000_0000FFFF :
-                       (r_size == `SIZE_WORD) ? 64'h00000000_FFFFFFFF :
-                                                64'hFFFFFFFF_FFFFFFFF;
+// Internal registers
+reg [3:0]  r_state;
+reg [3:0]  r_next_state;
+reg [31:0] r_addr;
+reg [63:0] r_wdata;
+reg [2:0]  r_size;
+reg [1:0]  r_rw;
 
-    assign m_axi_wstrb = (r_size == `SIZE_BYTE)  ? 8'b0000_0001 :
-                         (r_size == `SIZE_HALF)  ? 8'b0000_0011 :
-                         (r_size == `SIZE_WORD)  ? 8'b0000_1111 :
-                         (r_size == `SIZE_DWORD) ? 8'b1111_1111 :
-                                                   8'b0000_0000;
+// Alignment handling
+wire [63:0] size_mask;
+assign size_mask = (r_size == `SIZE_BYTE) ? 64'h00000000_000000FF :
+                    (r_size == `SIZE_HALF) ? 64'h00000000_0000FFFF :
+                    (r_size == `SIZE_WORD) ? 64'h00000000_FFFFFFFF :
+                                            64'hFFFFFFFF_FFFFFFFF;
 
-    wire misaligned_request;
-    assign misaligned_request = (i_rw != `RW_NOP) && (
-        ((i_size == `SIZE_HALF) && (i_addr[0] != 1'b0)) ||
-        ((i_size == `SIZE_WORD) && (i_addr[1:0] != 2'b00)) ||
-        ((i_size == `SIZE_DWORD) && (i_addr[2:0] != 3'b000))
-    );
+assign m_axi_wstrb = (r_size == `SIZE_BYTE)  ? 8'b0000_0001 :
+                        (r_size == `SIZE_HALF)  ? 8'b0000_0011 :
+                        (r_size == `SIZE_WORD)  ? 8'b0000_1111 :
+                        (r_size == `SIZE_DWORD) ? 8'b1111_1111 :
+                                                8'b0000_0000;
 
-    // AXI constants
-    assign m_axi_awaddr  = r_addr;
-    assign m_axi_awsize  = r_size;
-    assign m_axi_awburst = 2'b01;    // INCR
-    assign m_axi_awcache = 4'b0011;  // Bufferable
-    assign m_axi_awprot  = 3'b000;   // Unprivileged
-    assign m_axi_awlen   = 8'h0;     // Single beat
-    assign m_axi_awlock  = 1'b0;     // Normal
-    assign m_axi_awqos   = 4'h0;     // No QoS
+wire misaligned_request;
+assign misaligned_request = (i_rw != `RW_NOP) && (
+    ((i_size == `SIZE_HALF) && (i_addr[0] != 1'b0)) ||
+    ((i_size == `SIZE_WORD) && (i_addr[1:0] != 2'b00)) ||
+    ((i_size == `SIZE_DWORD) && (i_addr[2:0] != 3'b000))
+);
 
-    assign m_axi_wdata   = r_wdata;
+// AXI constants
+assign m_axi_awaddr  = r_addr;
+assign m_axi_awsize  = r_size;
+assign m_axi_awburst = 2'b01;    // INCR
+assign m_axi_awcache = 4'b0011;  // Bufferable
+assign m_axi_awprot  = 3'b000;   // Unprivileged
+assign m_axi_awlen   = 8'h0;     // Single beat
+assign m_axi_awlock  = 1'b0;     // Normal
+assign m_axi_awqos   = 4'h0;     // No QoS
 
-    assign m_axi_araddr  = r_addr;
-    assign m_axi_arsize  = r_size;
-    assign m_axi_arburst = 2'b01;    // INCR
-    assign m_axi_arcache = 4'b0011;  // Bufferable
-    assign m_axi_arprot  = 3'b000;   // Unprivileged
-    assign m_axi_arlen   = 8'h0;     // Single beat
-    assign m_axi_arlock  = 1'b0;     // Normal
-    assign m_axi_arqos   = 4'h0;     // No QoS
+assign m_axi_wdata   = r_wdata;
 
-    // Sequential logic
-    always @(posedge i_clk) begin
-        if (i_rst) begin
-            r_state <= S_IDLE;
-            r_addr  <= 32'b0;
-            r_wdata <= 64'b0;
-            r_size  <= 2'b0;
-            r_rw    <= 2'b00;
-            o_rdata <= 64'b0;
-        end else begin
-            r_state <= r_next_state;
+assign m_axi_araddr  = r_addr;
+assign m_axi_arsize  = r_size;
+assign m_axi_arburst = 2'b01;    // INCR
+assign m_axi_arcache = 4'b0011;  // Bufferable
+assign m_axi_arprot  = 3'b000;   // Unprivileged
+assign m_axi_arlen   = 8'h0;     // Single beat
+assign m_axi_arlock  = 1'b0;     // Normal
+assign m_axi_arqos   = 4'h0;     // No QoS
 
-            if (r_state < 4 && i_rw != `RW_NOP) begin
-                r_addr  <= i_addr;
-                r_wdata <= i_wdata;
-                r_size  <= i_size;
-                r_rw    <= i_rw;
-            end
+// Sequential logic
+always @(posedge i_clk) begin
+    if (i_rst) begin
+        r_state <= S_IDLE;
+        r_addr  <= 32'b0;
+        r_wdata <= 64'b0;
+        r_size  <= 2'b0;
+        r_rw    <= 2'b00;
+        o_rdata <= 64'b0;
+    end else begin
+        r_state <= r_next_state;
 
-            if (r_state == S_R_DATA_LAST && m_axi_rvalid) begin
-                o_rdata <= m_axi_rdata & size_mask;
-            end
+        if (r_state < 4 && i_rw != `RW_NOP) begin
+            r_addr  <= i_addr;
+            r_wdata <= i_wdata;
+            r_size  <= i_size;
+            r_rw    <= i_rw;
+        end
+
+        if (r_state == S_R_DATA_LAST && m_axi_rvalid) begin
+            o_rdata <= m_axi_rdata & size_mask;
         end
     end
+end
 
-    // Combinatorial logic
-    always @(*) begin
-        r_next_state  = r_state;
-        o_wait        = (r_state >= 4);
-        m_axi_awvalid = 1'b0;
-        m_axi_wvalid  = 1'b0;
-        m_axi_wlast   = 1'b0;
-        m_axi_bready  = 1'b0;
-        m_axi_arvalid = 1'b0;
-        m_axi_rready  = 1'b0;
-        o_done        = 1'b0;
-        o_error       = 1'b0;
-        o_invalid     = 1'b0;
+// Combinatorial logic
+always @(*) begin
+    r_next_state  = r_state;
+    o_wait        = (r_state >= 4);
+    m_axi_awvalid = 1'b0;
+    m_axi_wvalid  = 1'b0;
+    m_axi_wlast   = 1'b0;
+    m_axi_bready  = 1'b0;
+    m_axi_arvalid = 1'b0;
+    m_axi_rready  = 1'b0;
+    o_done        = 1'b0;
+    o_error       = 1'b0;
+    o_invalid     = 1'b0;
 
-        case (r_state)
+    case (r_state)
 
-        // Idle states
-        S_IDLE, S_DONE, S_ERROR, S_INVALID: begin
-            if (i_rw == `RW_WRITE || i_rw == `RW_READ) begin
-                if (misaligned_request) begin
-                    r_next_state = S_INVALID;
-                    o_done = 1'b1;
-                    o_error = 1'b1;
-                    o_invalid = 1'b1;
-                end else begin
-                    r_next_state = (i_rw == `RW_WRITE) ? S_W_SET_ADDR : S_R_SET_ADDR;
-                    r_next_state = S_W_SET_ADDR;
-                    o_wait = 1'b1;
-                end
+    // Idle states
+    S_IDLE, S_DONE, S_ERROR, S_INVALID: begin
+        if (i_rw == `RW_WRITE || i_rw == `RW_READ) begin
+            if (misaligned_request) begin
+                r_next_state = S_INVALID;
+                o_done = 1'b1;
+                o_error = 1'b1;
+                o_invalid = 1'b1;
             end else begin
-                r_next_state = (i_clear) ? S_IDLE : r_state;
-                o_done = (i_clear) ? 1'b0 : (r_state != S_IDLE);
-                o_error = (i_clear) ? 1'b0 : (r_state == S_ERROR || r_state == S_INVALID);
-                o_invalid = (i_clear) ? 1'b0 : (r_state == S_INVALID);
+                r_next_state = (i_rw == `RW_WRITE) ? S_W_SET_ADDR : S_R_SET_ADDR;
+                r_next_state = S_W_SET_ADDR;
+                o_wait = 1'b1;
             end
+        end else begin
+            r_next_state = (i_clear) ? S_IDLE : r_state;
+            o_done = (i_clear) ? 1'b0 : (r_state != S_IDLE);
+            o_error = (i_clear) ? 1'b0 : (r_state == S_ERROR || r_state == S_INVALID);
+            o_invalid = (i_clear) ? 1'b0 : (r_state == S_INVALID);
         end
-
-        // Write path
-        S_W_SET_ADDR: begin
-            r_next_state  = S_W_ADDR_WAIT;
-            m_axi_awvalid = 1'b1;
-        end
-
-        S_W_ADDR_WAIT: begin
-            m_axi_awvalid = 1'b1;
-            if (m_axi_awready) begin
-                r_next_state = S_W_DATA_LAST;
-            end
-        end
-
-        S_W_DATA_LAST: begin
-            m_axi_wvalid = 1'b1;
-            if (m_axi_wready) begin
-               r_next_state = S_W_RET;
-               m_axi_wlast  = 1'b1;
-            end
-        end
-
-        S_W_RET: begin
-            m_axi_bready = 1'b1;
-            if (m_axi_bvalid) begin
-                o_wait = 1'b0;
-                o_done = 1'b1;
-                o_error = (m_axi_bresp != `RESP_OKAY);
-                o_invalid = (m_axi_bresp == `RESP_DECERR);
-                r_next_state = (i_clear) ? S_IDLE :
-                               (m_axi_bresp == `RESP_DECERR) ? S_INVALID :
-                               (m_axi_bresp != `RESP_OKAY) ? S_ERROR :
-                                S_DONE;
-            end
-        end
-
-        // Read path
-        S_R_SET_ADDR: begin
-            r_next_state  = S_R_ADDR_WAIT;
-            m_axi_arvalid = 1'b1;
-        end
-
-        S_R_ADDR_WAIT: begin
-            m_axi_arvalid = 1'b1;
-            if (m_axi_arready) begin
-                r_next_state = S_R_DATA_LAST;
-            end
-        end
-
-        S_R_DATA_LAST: begin
-            m_axi_rready = 1'b1;
-            if (m_axi_rvalid) begin
-                o_wait = 1'b0;
-                o_done = 1'b1;
-                o_error = (m_axi_rresp != `RESP_OKAY);
-                o_invalid = (m_axi_rresp == `RESP_DECERR);
-                r_next_state = (i_clear) ? S_IDLE :
-                               (m_axi_rresp == `RESP_DECERR) ? S_INVALID :
-                               (m_axi_rresp != `RESP_OKAY) ? S_ERROR :
-                                S_DONE;
-            end
-        end
-
-        default: r_next_state = S_IDLE;
-
-        endcase
     end
+
+    // Write path
+    S_W_SET_ADDR: begin
+        r_next_state  = S_W_ADDR_WAIT;
+        m_axi_awvalid = 1'b1;
+    end
+
+    S_W_ADDR_WAIT: begin
+        m_axi_awvalid = 1'b1;
+        if (m_axi_awready) begin
+            r_next_state = S_W_DATA_LAST;
+        end
+    end
+
+    S_W_DATA_LAST: begin
+        m_axi_wvalid = 1'b1;
+        if (m_axi_wready) begin
+            r_next_state = S_W_RET;
+            m_axi_wlast  = 1'b1;
+        end
+    end
+
+    S_W_RET: begin
+        m_axi_bready = 1'b1;
+        if (m_axi_bvalid) begin
+            o_wait = 1'b0;
+            o_done = 1'b1;
+            o_error = (m_axi_bresp != `RESP_OKAY);
+            o_invalid = (m_axi_bresp == `RESP_DECERR);
+            r_next_state = (i_clear) ? S_IDLE :
+                            (m_axi_bresp == `RESP_DECERR) ? S_INVALID :
+                            (m_axi_bresp != `RESP_OKAY) ? S_ERROR :
+                            S_DONE;
+        end
+    end
+
+    // Read path
+    S_R_SET_ADDR: begin
+        r_next_state  = S_R_ADDR_WAIT;
+        m_axi_arvalid = 1'b1;
+    end
+
+    S_R_ADDR_WAIT: begin
+        m_axi_arvalid = 1'b1;
+        if (m_axi_arready) begin
+            r_next_state = S_R_DATA_LAST;
+        end
+    end
+
+    S_R_DATA_LAST: begin
+        m_axi_rready = 1'b1;
+        if (m_axi_rvalid) begin
+            o_wait = 1'b0;
+            o_done = 1'b1;
+            o_error = (m_axi_rresp != `RESP_OKAY);
+            o_invalid = (m_axi_rresp == `RESP_DECERR);
+            r_next_state = (i_clear) ? S_IDLE :
+                            (m_axi_rresp == `RESP_DECERR) ? S_INVALID :
+                            (m_axi_rresp != `RESP_OKAY) ? S_ERROR :
+                            S_DONE;
+        end
+    end
+
+    default: r_next_state = S_IDLE;
+
+    endcase
+end
+
 endmodule
