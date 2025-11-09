@@ -25,6 +25,8 @@ module simple_axi_master(
     output logic [7:0]  m_axi_awlen,
     output logic        m_axi_awlock,
     output logic [3:0]  m_axi_awqos,
+    output logic [3:0]  m_axi_awregion,
+    output logic [0:0]  m_axi_awid,
 
     output logic        m_axi_wvalid,
     input  logic        m_axi_wready,
@@ -35,6 +37,7 @@ module simple_axi_master(
     input  logic        m_axi_bvalid,
     output logic        m_axi_bready,
     input  logic [1:0]  m_axi_bresp,
+    input  logic [0:0]  m_axi_bid,
 
     output logic        m_axi_arvalid,
     input  logic        m_axi_arready,
@@ -46,12 +49,15 @@ module simple_axi_master(
     output logic [7:0]  m_axi_arlen,
     output logic        m_axi_arlock,
     output logic [3:0]  m_axi_arqos,
+    output logic [3:0]  m_axi_arregion,
+    output logic [0:0]  m_axi_arid,
 
     input  logic        m_axi_rvalid,
     output logic        m_axi_rready,
     input  logic        m_axi_rlast,
     input  logic [63:0] m_axi_rdata,
-    input  logic [1:0]  m_axi_rresp
+    input  logic [1:0]  m_axi_rresp,
+    input  logic [0:0]  m_axi_rid
 );
 
 typedef enum logic [1:0] {
@@ -137,18 +143,22 @@ assign m_axi_arvalid = r_state < 4 && i_rw == RW_READ && !o_error ||
                        r_state == S_R_ADDR_WAIT;
 
 // AXI constants
-assign m_axi_awburst = 2'b01;    // INCR
-assign m_axi_awcache = 4'b0011;  // Bufferable
-assign m_axi_awprot  = 3'b000;   // Unprivileged
-assign m_axi_awlen   = 8'h0;     // Single beat
-assign m_axi_awlock  = 1'b0;     // Normal
-assign m_axi_awqos   = 4'h0;     // No QoS
-assign m_axi_arburst = 2'b01;    // INCR
-assign m_axi_arcache = 4'b0011;  // Bufferable
-assign m_axi_arprot  = 3'b000;   // Unprivileged
-assign m_axi_arlen   = 8'h0;     // Single beat
-assign m_axi_arlock  = 1'b0;     // Normal
-assign m_axi_arqos   = 4'h0;     // No QoS
+assign m_axi_awburst  = 2'b01;    // INCR
+assign m_axi_awcache  = 4'b0011;  // Bufferable
+assign m_axi_awprot   = 3'b000;   // Unprivileged
+assign m_axi_awlen    = 8'h0;     // Single beat
+assign m_axi_awlock   = 1'b0;     // Normal
+assign m_axi_awqos    = 4'h0;     // No QoS
+assign m_axi_awregion = 4'h0;     // No region
+assign m_axi_awid     = 1'b0;     // Single ID
+assign m_axi_arburst  = 2'b01;    // INCR
+assign m_axi_arcache  = 4'b0011;  // Bufferable
+assign m_axi_arprot   = 3'b000;   // Unprivileged
+assign m_axi_arlen    = 8'h0;     // Single beat
+assign m_axi_arlock   = 1'b0;     // Normal
+assign m_axi_arqos    = 4'h0;     // No QoS
+assign m_axi_arregion = 4'h0;     // No region
+assign m_axi_arid     = 1'b0;     // Single ID
 
 // Sequential logic
 always_ff @(posedge i_clk) begin
