@@ -102,25 +102,30 @@ simple_axi_master dut (
 // Clock generation
 always #5 clk = ~clk;
 
-// 16 x 64-bit words = 128 bytes (0x00 to 0x7F)
-logic [63:0] mem [0:15];
-logic [31:0] read_addr;
-logic [31:0] write_addr;
+// 128 x 1 byte
+logic [7:0] mem [0:127];
+logic [31:0] read_addr = 32'b0;
+logic [31:0] write_addr = 32'b0;
 int slave_delay_counter;
 int slave_delay_load;
 logic slave_delay_reload;
 logic [1:0] error_response;
 
 initial begin
-    for (int i = 0; i < 16; i++) begin
-        mem[i] = 64'h0000_0000_0000_0000;
+    for (int i = 0; i < 128; i++) begin
+        mem[i] = 8'h00;
     end
 end
 
 task dump_memory(input string title = "Memory");
     $display("\n--- %s ---", title);
-    for (int i = 0; i < 16; i++) begin
-        $display("  [0x%02X]: 0x%016X", i*8, mem[i]);
+    for (int i = 0; i < 128; i += 8) begin
+        $display(
+            "  [0x%02X]: %02X %02X %02X %02X %02X %02X %02X %02X",
+            i,
+            mem[i],   mem[i+1], mem[i+2], mem[i+3],
+            mem[i+4], mem[i+5], mem[i+6], mem[i+7]
+        );
     end
     $display("-------------------\n");
 endtask
@@ -166,8 +171,7 @@ always_ff @(posedge clk) begin
                 if (error_response == 2'b00) begin
                     // Write bytes according to strobe
                     for (int k = 0; k < 8; k++) begin
-                        if (axi_wstrb[k])
-                            mem[write_addr[6:3]][8*k +: 8] = axi_wdata[8*k +: 8];
+                        if (axi_wstrb[k]) mem[write_addr + k] = axi_wdata[k*8 +: 8];
                     end
                 end
                 $display("  [%0t] AXI Write: addr=0x%08X, strb=0x%02X, data=0x%016X",
@@ -201,9 +205,19 @@ always_ff @(posedge clk) begin
         if (axi_rready && !axi_rvalid) begin
             if (slave_delay_counter == 0) begin
                 axi_rvalid <= 1;
-                axi_rdata  <= (error_response == 2'b00) ? mem[read_addr[6:3]] : 64'h0;
-                axi_rlast  <= 1;
-                axi_rresp  <= error_response;
+                if (error_response == 2'b00) begin
+                    // Read 8 bytes starting from address
+                    axi_rdata <= {
+                        mem[read_addr+7], mem[read_addr+6],
+                        mem[read_addr+5], mem[read_addr+4],
+                        mem[read_addr+3], mem[read_addr+2],
+                        mem[read_addr+1], mem[read_addr+0]
+                    };
+                end else begin
+                    axi_rdata <= 64'h0;
+                end
+                axi_rlast <= 1;
+                axi_rresp <= error_response;
                 $display("  [%0t] AXI Read: addr=0x%08X, data=0x%016X",
                             $time, read_addr, (error_response == 2'b00) ? mem[read_addr[6:3]] : 64'h0);
             end
@@ -294,16 +308,16 @@ initial begin
     // ================================================
     $display("\n========== TEST 1: Aligned Writes ==========");
 
-    do_write(32'h0000_0000, 3'b000, 64'h00000000_000000AA, 0); // byte
+    do_write(32'h0000_0000, 3'b000, 64'h00000000_000000EE, 0); // byte
     do_clear();
 
-    do_write(32'h0000_0002, 3'b001, 64'h00000000_0000BBBB, 0); // half
+    do_write(32'h0000_0002, 3'b001, 64'h00000000_0000ABCD, 0); // half
     do_clear();
 
-    do_write(32'h0000_0004, 3'b010, 64'h00000000_CCCCCCCC, 0); // word
+    do_write(32'h0000_0004, 3'b010, 64'h00000000_12345678, 0); // word
     do_clear();
 
-    do_write(32'h0000_0008, 3'b011, 64'hDDDDDDDD_DDDDDDDD, 0); // dword
+    do_write(32'h0000_0008, 3'b011, 64'h11DD11DD_22EE22EE, 0); // dword
     do_clear();
 
     dump_memory("After Aligned Writes");

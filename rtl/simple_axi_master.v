@@ -15,8 +15,8 @@
 `define SIZE_DWORD 3'b011
 
 module simple_axi_master(
-    input  wire        i_clk,  // Global clock
-    input  wire        i_rst,  // Global reset
+    input  wire        i_clk,
+    input  wire        i_rst,
 
     // Host bus
     input  wire [2:0]  i_size,     // 0-byte, 1-half, 2-word, 3-dword
@@ -30,7 +30,6 @@ module simple_axi_master(
     output reg         o_error,    // Transaction failed
     output reg         o_invalid,  // Requested invalid address
 
-    // Write Address (AW) channel signals
     output wire        m_axi_awvalid,
     input  wire        m_axi_awready,
     output wire [31:0] m_axi_awaddr,
@@ -42,19 +41,16 @@ module simple_axi_master(
     output wire        m_axi_awlock,
     output wire [3:0]  m_axi_awqos,
 
-    // Write Data (W) channel signals
     output reg         m_axi_wvalid,
     input  wire        m_axi_wready,
     output reg         m_axi_wlast,
     output wire [63:0] m_axi_wdata,
     output wire [7:0]  m_axi_wstrb,
 
-    // Write Response (B) channel signals
     input  wire        m_axi_bvalid,
     output reg         m_axi_bready,
     input  wire [1:0]  m_axi_bresp,
 
-    // Read Address (AR) channel signals
     output wire        m_axi_arvalid,
     input  wire        m_axi_arready,
     output wire [31:0] m_axi_araddr,
@@ -66,7 +62,6 @@ module simple_axi_master(
     output wire        m_axi_arlock,
     output wire [3:0]  m_axi_arqos,
 
-    // Read Data (R) channel signals
     input  wire        m_axi_rvalid,
     output reg         m_axi_rready,
     input  wire        m_axi_rlast,
@@ -103,14 +98,16 @@ assign size_mask = (r_size == `SIZE_BYTE) ? 64'h00000000_000000FF :
                    (r_size == `SIZE_WORD) ? 64'h00000000_FFFFFFFF :
                                             64'hFFFFFFFF_FFFFFFFF;
 
-assign m_axi_wstrb = (r_size == `SIZE_BYTE)  ? 8'b0000_0001 :
-                     (r_size == `SIZE_HALF)  ? 8'b0000_0011 :
-                     (r_size == `SIZE_WORD)  ? 8'b0000_1111 :
-                     (r_size == `SIZE_DWORD) ? 8'b1111_1111 :
-                                               8'b0000_0000;
+wire [2:0] byte_offset = r_addr[2:0];
 
-wire misaligned_request;
-assign misaligned_request = (i_rw != `RW_NOP) && (
+wire [7:0] base_strb = (r_size == `SIZE_BYTE)  ? 8'b0000_0001 :
+                       (r_size == `SIZE_HALF)  ? 8'b0000_0011 :
+                       (r_size == `SIZE_WORD)  ? 8'b0000_1111 :
+                       (r_size == `SIZE_DWORD) ? 8'b1111_1111 :
+                                                 8'b0000_0000;
+assign m_axi_wstrb = base_strb << byte_offset;
+
+wire misaligned_request = (i_rw != `RW_NOP) && (
     ((i_size == `SIZE_HALF) && (i_addr[0] != 1'b0)) ||
     ((i_size == `SIZE_WORD) && (i_addr[1:0] != 2'b00)) ||
     ((i_size == `SIZE_DWORD) && (i_addr[2:0] != 3'b000))
@@ -119,6 +116,7 @@ assign misaligned_request = (i_rw != `RW_NOP) && (
 // AXI constants
 assign m_axi_awaddr  = r_addr;
 assign m_axi_awsize  = r_size;
+assign m_axi_awvalid = ((r_state < 4 && i_rw == `RW_WRITE)|| r_state == S_W_SET_ADDR || r_state == S_W_ADDR_WAIT);
 assign m_axi_awburst = 2'b01;    // INCR
 assign m_axi_awcache = 4'b0011;  // Bufferable
 assign m_axi_awprot  = 3'b000;   // Unprivileged
@@ -126,10 +124,11 @@ assign m_axi_awlen   = 8'h0;     // Single beat
 assign m_axi_awlock  = 1'b0;     // Normal
 assign m_axi_awqos   = 4'h0;     // No QoS
 
-assign m_axi_wdata   = r_wdata;
+assign m_axi_wdata   = r_wdata << (byte_offset * 8);
 
 assign m_axi_araddr  = r_addr;
 assign m_axi_arsize  = r_size;
+assign m_axi_arvalid = ((r_state < 4 && i_rw == `RW_READ)|| r_state == S_R_SET_ADDR || r_state == S_R_ADDR_WAIT);
 assign m_axi_arburst = 2'b01;    // INCR
 assign m_axi_arcache = 4'b0011;  // Bufferable
 assign m_axi_arprot  = 3'b000;   // Unprivileged
@@ -155,15 +154,13 @@ always @(posedge i_clk) begin
             r_rw    <= i_rw;
         end
         if (m_axi_rready && m_axi_rvalid) begin
-            r_rdata <= m_axi_rdata & size_mask;
+            r_rdata <= (m_axi_rdata >> (byte_offset * 8)) & size_mask;
         end
     end
 end
 
 // Read data select
-assign o_rdata = (m_axi_rvalid && m_axi_rready) ? m_axi_rdata & size_mask : r_rdata;
-assign m_axi_awvalid = ((r_state < 4 && i_rw == `RW_WRITE)|| r_state == S_W_SET_ADDR || r_state == S_W_ADDR_WAIT);
-assign m_axi_arvalid = ((r_state < 4 && i_rw == `RW_READ)|| r_state == S_R_SET_ADDR || r_state == S_R_ADDR_WAIT);
+assign o_rdata = (m_axi_rvalid && m_axi_rready) ? (m_axi_rdata >> (byte_offset * 8)) & size_mask : r_rdata;
 
 // Combinatorial logic
 always @(*) begin
@@ -205,9 +202,7 @@ always @(*) begin
     end
 
     S_W_ADDR_WAIT: begin
-        if (m_axi_awready) begin
-            r_next_state = S_W_DATA_LAST;
-        end
+        r_next_state = (m_axi_awready) ? S_W_DATA_LAST : S_W_ADDR_WAIT;
     end
 
     S_W_DATA_LAST: begin
@@ -238,9 +233,7 @@ always @(*) begin
     end
 
     S_R_ADDR_WAIT: begin
-        if (m_axi_arready) begin
-            r_next_state = S_R_DATA_LAST;
-        end
+        r_next_state = (m_axi_arready) ? S_R_DATA_LAST : S_R_ADDR_WAIT;
     end
 
     S_R_DATA_LAST: begin
@@ -258,7 +251,6 @@ always @(*) begin
     end
 
     default: r_next_state = S_IDLE;
-
     endcase
 end
 
