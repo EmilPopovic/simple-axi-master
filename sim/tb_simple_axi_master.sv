@@ -442,14 +442,10 @@ initial begin
     $display("\n========== TEST 8: Back-to-Back Transactions ==========");
 
     do_write(32'h0000_0040, 3'b000, 64'h00000000_000000FF, 0);
-    // Clear and immediately start next
-    clear = 1; @(posedge clk); clear = 0;
 
     do_write(32'h0000_0041, 3'b000, 64'h00000000_000000EE, 0);
-    clear = 1; @(posedge clk); clear = 0;
 
     do_read(32'h0000_0040, 3'b001, 0);
-    do_clear();
 
     dump_memory("Final Memory State");
 

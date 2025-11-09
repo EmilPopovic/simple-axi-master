@@ -31,7 +31,7 @@ module simple_axi_master(
     output reg         o_invalid,  // Requested invalid address
 
     // Write Address (AW) channel signals
-    output reg         m_axi_awvalid,
+    output wire        m_axi_awvalid,
     input  wire        m_axi_awready,
     output wire [31:0] m_axi_awaddr,
     output wire [2:0]  m_axi_awsize,
@@ -55,7 +55,7 @@ module simple_axi_master(
     input  wire [1:0]  m_axi_bresp,
 
     // Read Address (AR) channel signals
-    output reg         m_axi_arvalid,
+    output wire        m_axi_arvalid,
     input  wire        m_axi_arready,
     output wire [31:0] m_axi_araddr,
     output wire [2:0]  m_axi_arsize,
@@ -162,16 +162,16 @@ end
 
 // Read data select
 assign o_rdata = (m_axi_rvalid && m_axi_rready) ? m_axi_rdata & size_mask : r_rdata;
+assign m_axi_awvalid = ((r_state < 4 && i_rw == `RW_WRITE)|| r_state == S_W_SET_ADDR || r_state == S_W_ADDR_WAIT);
+assign m_axi_arvalid = ((r_state < 4 && i_rw == `RW_READ)|| r_state == S_R_SET_ADDR || r_state == S_R_ADDR_WAIT);
 
 // Combinatorial logic
 always @(*) begin
     r_next_state  = r_state;
     o_wait        = (r_state >= 4);
-    m_axi_awvalid = 1'b0;
     m_axi_wvalid  = 1'b0;
     m_axi_wlast   = 1'b0;
     m_axi_bready  = 1'b0;
-    m_axi_arvalid = 1'b0;
     m_axi_rready  = 1'b0;
     o_done        = 1'b0;
     o_error       = 1'b0;
@@ -201,12 +201,10 @@ always @(*) begin
 
     // Write path
     S_W_SET_ADDR: begin
-        r_next_state  = S_W_ADDR_WAIT;
-        m_axi_awvalid = 1'b1;
+        r_next_state  = (m_axi_awready) ? S_W_DATA_LAST : S_W_ADDR_WAIT;
     end
 
     S_W_ADDR_WAIT: begin
-        m_axi_awvalid = 1'b1;
         if (m_axi_awready) begin
             r_next_state = S_W_DATA_LAST;
         end
@@ -236,12 +234,10 @@ always @(*) begin
 
     // Read path
     S_R_SET_ADDR: begin
-        r_next_state  = S_R_ADDR_WAIT;
-        m_axi_arvalid = 1'b1;
+        r_next_state  = (m_axi_arready) ? S_R_DATA_LAST :  S_R_ADDR_WAIT;
     end
 
     S_R_ADDR_WAIT: begin
-        m_axi_arvalid = 1'b1;
         if (m_axi_arready) begin
             r_next_state = S_R_DATA_LAST;
         end
