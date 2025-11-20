@@ -10,15 +10,17 @@ axi-master/
 *.log
 .Xil/
 
-# Block designs
+# Block designs - ignore everything except .tcl files
 bd/*
-!bd/*.tcl
+!bd/*/
+bd/*/*
+!bd/*/*.tcl
 
 # Bitstreams and implementation outputs
 *.bit
 *.bin
 *.mcs
 
-# Synthesis and implementation reports (optional to track)
+# Synthesis and implementation reports
 *.rpt
 *.dcp

@@ -33,6 +33,9 @@ open:
 clean:
 	@echo "Removing project directory..."
 	rm -rf $(PROJECT_DIR)
+	@echo "Cleaning generated block design files..."
+	@find bd/ -type f -not -name '*.tcl' -delete 2>/dev/null || true
+	@find bd/ -type d -empty -delete 2>/dev/null || true
 	@echo "Clean complete!"
 
 # Show help
