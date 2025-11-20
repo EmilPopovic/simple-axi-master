@@ -19,6 +19,16 @@ project:
 	$(VIVADO_BATCH) $(SCRIPTS_DIR)/create_project.tcl
 	@echo "Done! Project created at: $(PROJECT_DIR)/$(PROJECT_NAME).xpr"
 
+# Export block designs to TCL
+.PHONY: export-bd
+export-bd:
+	@if [ ! -f $(PROJECT_DIR)/$(PROJECT_NAME).xpr ]; then \
+		echo "ERROR: Project not found. Run 'make project' first."; \
+		exit 1; \
+	fi
+	@echo "Exporting block designs to TCL..."
+	$(VIVADO_BATCH) $(SCRIPTS_DIR)/export_bd.tcl
+
 # Open project in GUI
 .PHONY: open
 open:
@@ -44,8 +54,9 @@ help:
 	@echo "AXI Master - PYNQ-Z2 Project"
 	@echo ""
 	@echo "Targets:"
-	@echo "  make          - Create Vivado project (default)"
-	@echo "  make project  - Create Vivado project"
-	@echo "  make open     - Open project in Vivado GUI"
-	@echo "  make clean    - Remove project directory"
-	@echo "  make help     - Show this help"
+	@echo "  make           - Create Vivado project (default)"
+	@echo "  make project   - Create Vivado project"
+	@echo "  make export-bd - Export block designs to TCL"
+	@echo "  make open      - Open project in Vivado GUI"
+	@echo "  make clean     - Remove project directory"
+	@echo "  make help      - Show this help"

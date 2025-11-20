@@ -9,6 +9,7 @@ axi-master/
 *.jou
 *.log
 .Xil/
+*.str/
 
 # Block designs - ignore everything except .tcl files
 bd/*
