@@ -2,7 +2,7 @@
 
 module simple_axi_master(
     input  logic        i_clk,
-    input  logic        i_rst,
+    input  logic        i_rstn,
 
     input  logic [2:0]  i_size,     // 0-byte, 1-half, 2-word, 3-dword
     input  logic [31:0] i_addr,     // Address bus
@@ -126,7 +126,7 @@ assign m_axi_arvalid = r_state < 4 && i_rw == RW_READ && !o_error ||
 
 // Sequential logic
 always_ff @(posedge i_clk) begin
-    if (i_rst) begin
+    if (!i_rstn) begin
         r_state <= S_IDLE;
         r_addr  <= '0;
         r_wdata <= '0;

@@ -1,50 +1,82 @@
 `timescale 1ns / 1ps
 
 module simple_axi_master_wrapper(
+    (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 i_clk CLK" *)
+    (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF m_axi, ASSOCIATED_RESET i_rstn" *)
     input  wire        i_clk,
-    input  wire        i_rst,
+    
+    (* X_INTERFACE_INFO = "xilinx.com:signal:reset:1.0 i_rstn RST" *)
+    (* X_INTERFACE_PARAMETER = "POLARITY ACTIVE_LOW" *)
+    input  wire        i_rstn,
 
-    input  wire [2:0]  i_size,     // 0-byte, 1-half, 2-word, 3-dword
-    input  wire [31:0] i_addr,     // Address bus
-    input  wire [63:0] i_wdata,    // Write data bus
-    output wire [63:0] o_rdata,    // Read data bus
-    input  wire [1:0]  i_rw,       // 00-idle, 01-write, 10-read, 11-reserved
-    output wire        o_wait,     // Transfer active
-    input  wire        i_clear,    // Clear done, error and invalid
-    output wire        o_done,     // 1 after completing transfer
-    output wire        o_error,    // Transaction failed
-    output wire        o_invalid,  // Requested invalid address
+    // Host bus
+    input  wire [2:0]  i_size,
+    input  wire [31:0] i_addr,
+    input  wire [63:0] i_wdata,
+    output wire [63:0] o_rdata,
+    input  wire [1:0]  i_rw,
+    output wire        o_wait,
+    input  wire        i_clear,
+    output wire        o_done,
+    output wire        o_error,
+    output wire        o_invalid,
 
+    // AXI4 Master Write Address Channel
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWVALID" *)
     output wire        m_axi_awvalid,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWREADY" *)
     input  wire        m_axi_awready,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWADDR" *)
     output wire [31:0] m_axi_awaddr,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWSIZE" *)
     output wire [2:0]  m_axi_awsize,
 
+    // AXI4 Master Write Data Channel
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi WVALID" *)
     output wire        m_axi_wvalid,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi WREADY" *)
     input  wire        m_axi_wready,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi WLAST" *)
     output wire        m_axi_wlast,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi WDATA" *)
     output wire [63:0] m_axi_wdata,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi WSTRB" *)
     output wire [7:0]  m_axi_wstrb,
 
+    // AXI4 Master Write Response Channel
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi BVALID" *)
     input  wire        m_axi_bvalid,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi BREADY" *)
     output wire        m_axi_bready,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi BRESP" *)
     input  wire [1:0]  m_axi_bresp,
 
+    // AXI4 Master Read Address Channel
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARVALID" *)
     output wire        m_axi_arvalid,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARREADY" *)
     input  wire        m_axi_arready,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARADDR" *)
     output wire [31:0] m_axi_araddr,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARSIZE" *)
     output wire [2:0]  m_axi_arsize,
 
+    // AXI4 Master Read Data Channel
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi RVALID" *)
     input  wire        m_axi_rvalid,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi RREADY" *)
     output wire        m_axi_rready,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi RLAST" *)
     input  wire        m_axi_rlast,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi RDATA" *)
     input  wire [63:0] m_axi_rdata,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi RRESP" *)
     input  wire [1:0]  m_axi_rresp
 );
 
 simple_axi_master simple_axi_master (
     .i_clk          (i_clk),
-    .i_rst          (i_rst),
+    .i_rstn         (i_rstn),
     .i_size         (i_size),
     .i_addr         (i_addr),
     .i_wdata        (i_wdata),
