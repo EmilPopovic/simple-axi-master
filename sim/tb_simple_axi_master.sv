@@ -4,7 +4,7 @@ module tb_simple_axi_master();
 
 // Clock and reset
 logic clk = 0;
-logic rst = 1;
+logic rstn = 0;
 
 // Host bus
 logic [31:0] addr;
@@ -48,7 +48,7 @@ logic        axi_rlast = 0;
 // Master instance
 simple_axi_master dut (
     .i_clk(clk),
-    .i_rst(rst),
+    .i_rstn(rstn),
     .i_addr(addr),
     .i_size(size),
     .i_wdata(wdata),
@@ -127,7 +127,7 @@ endtask
 
 // AXI slave
 always_ff @(posedge clk) begin
-    if (rst) begin
+    if (!rstn) begin
         axi_awready <= 0;
         axi_wready <= 0;
         axi_bvalid <= 0;
@@ -289,7 +289,7 @@ initial begin
     slave_delay_reload = 0;
     error_response = 2'b00; // OKAY
 
-    #20 rst = 0;
+    #20 rstn = 1;
     #50;
 
     dump_memory("Initial Memory State");
