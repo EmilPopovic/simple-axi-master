@@ -1,6 +1,3 @@
-# scripts/create_project.tcl
-# This script recreates the Vivado project from source files
-
 # Project settings
 set project_name "axi-master"
 set origin_dir [file normalize [file dirname [info script]]/..]

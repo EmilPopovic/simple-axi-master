@@ -21,6 +21,11 @@ bd/*/*
 *.bit
 *.bin
 *.mcs
+*.xsa
+
+# Do not ignore generated overlays
+!overlay/*.bit
+!overlay/*.hwh
 
 # Synthesis and implementation reports
 *.rpt

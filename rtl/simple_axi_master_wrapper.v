@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 
-module simple_axi_master_wrapper(
+module simple_axi_master_wrapper #(
+    parameter integer C_HOST_DATA_WIDTH = 32
+) (
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 i_clk CLK" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF m_axi, ASSOCIATED_RESET i_rstn" *)
     input  wire        i_clk,
@@ -12,8 +14,8 @@ module simple_axi_master_wrapper(
     // Host bus
     input  wire [2:0]  i_size,
     input  wire [31:0] i_addr,
-    input  wire [63:0] i_wdata,
-    output wire [63:0] o_rdata,
+    input  wire [C_HOST_DATA_WIDTH-1:0] i_wdata,
+    output wire [C_HOST_DATA_WIDTH-1:0] o_rdata,
     input  wire [1:0]  i_rw,
     output wire        o_wait,
     input  wire        i_clear,
@@ -74,13 +76,26 @@ module simple_axi_master_wrapper(
     input  wire [1:0]  m_axi_rresp
 );
 
+    wire [63:0] w_wrapped_wdata;
+    wire [63:0] w_wrapped_rdata;
+
+    generate
+        if (C_HOST_DATA_WIDTH == 32) begin
+            assign w_wrapped_wdata = {32'b0, i_wdata};
+            assign o_rdata = w_wrapped_rdata[31:0];
+        end else begin
+            assign w_wrapped_wdata = i_wdata;
+            assign o_rdata = w_wrapped_rdata;
+        end
+    endgenerate
+
 simple_axi_master simple_axi_master (
     .i_clk          (i_clk),
     .i_rstn         (i_rstn),
     .i_size         (i_size),
     .i_addr         (i_addr),
-    .i_wdata        (i_wdata),
-    .o_rdata        (o_rdata),
+    .i_wdata        (w_wrapped_wdata),
+    .o_rdata        (w_wrapped_rdata),
     .i_rw           (i_rw),
     .o_wait         (o_wait),
     .i_clear        (i_clear),

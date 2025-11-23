@@ -1,0 +1,4 @@
+*.bit binary
+*.hwh linguist-generated=true
+*.tcl linguist-vendored
+*.xdc linguist-vendored

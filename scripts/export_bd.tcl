@@ -1,5 +1,3 @@
-# Export all block designs in the project to TCL
-
 set project_name "axi-master"
 set project_dir [file normalize [file dirname [info script]]/../${project_name}]
 set bd_dir [file normalize [file dirname [info script]]/../bd]

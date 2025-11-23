@@ -4,6 +4,7 @@
 PROJECT_NAME := axi-master
 PROJECT_DIR := $(CURDIR)/$(PROJECT_NAME)
 SCRIPTS_DIR := $(CURDIR)/scripts
+OVERLAY_DIR := $(CURDIR)/overlay
 
 VIVADO := vivado
 VIVADO_BATCH := $(VIVADO) -mode batch -nolog -nojournal -source
@@ -28,6 +29,37 @@ export-bd:
 	fi
 	@echo "Exporting block designs to TCL..."
 	$(VIVADO_BATCH) $(SCRIPTS_DIR)/export_bd.tcl
+
+# Generate Bitstream and Deploy to overlay/
+.PHONY: bitstream
+bitstream:
+	@if [ ! -f $(PROJECT_DIR)/$(PROJECT_NAME).xpr ]; then \
+		echo "ERROR: Project not found. Run 'make project' first."; \
+		exit 1; \
+	fi
+	@echo "Building Bitstream (this may take a while)..."
+	$(VIVADO_BATCH) $(SCRIPTS_DIR)/build_bitstream.tcl
+	
+	@echo "Deploying artifacts to $(OVERLAY_DIR)..."
+	@mkdir -p $(OVERLAY_DIR)
+	
+	@find $(PROJECT_DIR)/$(PROJECT_NAME).runs/impl_1 -name "*.bit" -exec cp {} $(OVERLAY_DIR)/demo.bit \;
+	
+	@find $(PROJECT_DIR) -name "*.hwh" -exec cp {} $(OVERLAY_DIR)/demo.hwh \;
+	
+	@if [ ! -f $(OVERLAY_DIR)/demo.hwh ]; then \
+		echo "WARNING: .hwh not found directly. Extracting from XSA..."; \
+		if [ -f $(CURDIR)/$(PROJECT_NAME).xsa ]; then \
+			unzip -p $(CURDIR)/$(PROJECT_NAME).xsa *hw_handoff/*.hwh > $(OVERLAY_DIR)/demo.hwh || \
+			unzip -p $(CURDIR)/$(PROJECT_NAME).xsa *.hwh > $(OVERLAY_DIR)/demo.hwh; \
+			echo "Extracted HWH from XSA."; \
+		else \
+			echo "ERROR: Could not find .hwh or .xsa file!"; \
+			exit 1; \
+		fi \
+	fi
+
+	@echo "Build Complete! Files are ready in $(OVERLAY_DIR)"
 
 # Open project in GUI
 .PHONY: open
@@ -59,4 +91,5 @@ help:
 	@echo "  make export-bd - Export block designs to TCL"
 	@echo "  make open      - Open project in Vivado GUI"
 	@echo "  make clean     - Remove project directory"
+	@echo "  make bitstream - Build bitstream and copy to overlay/"
 	@echo "  make help      - Show this help"
