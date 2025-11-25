@@ -38,6 +38,14 @@ module simple_axi_master_wrapper #(
     output wire [3:0]  m_axi_awcache,
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWPROT" *)
     output wire [2:0]  m_axi_awprot,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWBURST" *)
+    output wire [1:0]  m_axi_awburst,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWLEN" *)
+    output wire [7:0]  m_axi_awlen,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWLOCK" *)
+    output wire        m_axi_awlock,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWQOS" *)
+    output wire [3:0]  m_axi_awqos,
 
     // AXI4 Master Write Data Channel
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi WVALID" *)
@@ -72,6 +80,14 @@ module simple_axi_master_wrapper #(
     output wire [3:0]  m_axi_arcache,
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARPROT" *)
     output wire [2:0]  m_axi_arprot,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARBURST" *)
+    output wire [1:0]  m_axi_arburst,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARLEN" *)
+    output wire [7:0]  m_axi_arlen,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARLOCK" *)
+    output wire        m_axi_arlock,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARQOS" *)
+    output wire [3:0]  m_axi_arqos,
 
     // AXI4 Master Read Data Channel
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi RVALID" *)
@@ -120,6 +136,10 @@ simple_axi_master simple_axi_master (
     .m_axi_awsize   (m_axi_awsize),
     .m_axi_awcache  (m_axi_awcache),
     .m_axi_awprot   (m_axi_awprot),
+    .m_axi_awburst  (m_axi_awburst),
+    .m_axi_awlen    (m_axi_awlen),
+    .m_axi_awlock   (m_axi_awlock),
+    .m_axi_awqos    (m_axi_awqos),
     .m_axi_wvalid   (m_axi_wvalid),
     .m_axi_wready   (m_axi_wready),
     .m_axi_wlast    (m_axi_wlast),
@@ -134,6 +154,10 @@ simple_axi_master simple_axi_master (
     .m_axi_arsize   (m_axi_arsize),
     .m_axi_arcache  (m_axi_arcache),
     .m_axi_arprot   (m_axi_arprot),
+    .m_axi_arburst  (m_axi_arburst),
+    .m_axi_arlen    (m_axi_arlen),
+    .m_axi_arlock   (m_axi_arlock),
+    .m_axi_arqos    (m_axi_arqos),
     .m_axi_rvalid   (m_axi_rvalid),
     .m_axi_rready   (m_axi_rready),
     .m_axi_rlast    (m_axi_rlast),
