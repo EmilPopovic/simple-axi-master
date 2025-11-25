@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 
 module simple_axi_master(
+    output logic [3:0] o_debug_state,
+
     input  logic        i_clk,
     input  logic        i_rstn,
 
@@ -88,6 +90,8 @@ logic [63:0]   r_wdata;
 logic [2:0]    r_size;
 logic [1:0]    r_rw;
 logic [63:0]   r_rdata;
+
+assign o_debug_state = r_state;
 
 // Alignment handling
 logic [63:0] size_mask;

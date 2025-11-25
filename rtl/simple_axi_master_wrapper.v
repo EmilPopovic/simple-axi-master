@@ -3,6 +3,8 @@
 module simple_axi_master_wrapper #(
     parameter integer C_HOST_DATA_WIDTH = 32
 ) (
+    output wire [3:0] o_debug_state,
+
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 i_clk CLK" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF m_axi, ASSOCIATED_RESET i_rstn" *)
     input  wire        i_clk,
@@ -98,6 +100,8 @@ module simple_axi_master_wrapper #(
     endgenerate
 
 simple_axi_master simple_axi_master (
+    .o_debug_state (o_debug_state),
+
     .i_clk          (i_clk),
     .i_rstn         (i_rstn),
     .i_size         (i_size),

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Tue Nov 25 22:26:27 2025" VIVADOVERSION="2022.2">
+<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Tue Nov 25 23:01:27 2025" VIVADOVERSION="2022.2">
 
   <SYSTEMINFO ARCH="zynq" DEVICE="7z020" NAME="design_1" PACKAGE="clg400" SPEEDGRADE="-1"/>
 
@@ -109,6 +109,11 @@
         <CONNECTION INSTANCE="ps" PORT="PS_PORB"/>
       </CONNECTIONS>
     </PORT>
+    <PORT DIR="O" LEFT="3" NAME="leds_4bits" RIGHT="0" SIGIS="undef" SIGNAME="axi_master_o_debug_state">
+      <CONNECTIONS>
+        <CONNECTION INSTANCE="axi_master" PORT="o_debug_state"/>
+      </CONNECTIONS>
+    </PORT>
   </EXTERNALPORTS>
 
   <EXTERNALINTERFACES>
@@ -167,6 +172,11 @@
         <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
       </PARAMETERS>
       <PORTS>
+        <PORT DIR="O" LEFT="3" NAME="o_debug_state" RIGHT="0" SIGIS="undef" SIGNAME="axi_master_o_debug_state">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="External_Ports" PORT="leds_4bits"/>
+          </CONNECTIONS>
+        </PORT>
         <PORT CLKFREQUENCY="50000000" DIR="I" NAME="i_clk" SIGIS="clk" SIGNAME="ps_FCLK_CLK0">
           <CONNECTIONS>
             <CONNECTION INSTANCE="ps" PORT="FCLK_CLK0"/>
@@ -5061,7 +5071,6 @@
         </PORT>
         <PORT CLKFREQUENCY="50000000" DIR="O" NAME="FCLK_CLK0" SIGIS="clk" SIGNAME="ps_FCLK_CLK0">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="axi_master" PORT="i_clk"/>
             <CONNECTION INSTANCE="gpio_addr" PORT="s_axi_aclk"/>
             <CONNECTION INSTANCE="gpio_ctrl" PORT="s_axi_aclk"/>
             <CONNECTION INSTANCE="gpio_interconnect" PORT="ACLK"/>
@@ -5077,6 +5086,7 @@
             <CONNECTION INSTANCE="master_interconnect" PORT="S00_ACLK"/>
             <CONNECTION INSTANCE="ps" PORT="M_AXI_GP0_ACLK"/>
             <CONNECTION INSTANCE="ps" PORT="S_AXI_HP0_ACLK"/>
+            <CONNECTION INSTANCE="axi_master" PORT="i_clk"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" NAME="FCLK_RESET0_N" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="ps_FCLK_RESET0_N">
@@ -5456,10 +5466,10 @@
         </PORT>
         <PORT DIR="O" LEFT="0" NAME="Dout" RIGHT="0" SIGIS="undef" SIGNAME="slice_rstn_6_downto_6_Dout">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="axi_master" PORT="i_rstn"/>
             <CONNECTION INSTANCE="master_interconnect" PORT="ARESETN"/>
             <CONNECTION INSTANCE="master_interconnect" PORT="M00_ARESETN"/>
             <CONNECTION INSTANCE="master_interconnect" PORT="S00_ARESETN"/>
+            <CONNECTION INSTANCE="axi_master" PORT="i_rstn"/>
           </CONNECTIONS>
         </PORT>
       </PORTS>

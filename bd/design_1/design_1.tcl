@@ -226,6 +226,7 @@ proc create_root_design { parentCell } {
 
 
   # Create ports
+  set leds_4bits [ create_bd_port -dir O -from 3 -to 0 leds_4bits ]
 
   # Create instance: axi_master, and set properties
   set block_name simple_axi_master_wrapper
@@ -345,6 +346,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net axi_gpio_0_gpio_io_o [get_bd_pins axi_master/i_wdata] [get_bd_pins gpio_wdata/gpio_io_o]
   connect_bd_net -net axi_gpio_2_gpio_io_o [get_bd_pins axi_master/i_addr] [get_bd_pins gpio_addr/gpio_io_o]
   connect_bd_net -net axi_gpio_3_gpio_io_o [get_bd_pins gpio_ctrl/gpio_io_o] [get_bd_pins slice_clear_5_downto_5/Din] [get_bd_pins slice_rstn_6_downto_6/Din] [get_bd_pins slice_rw_4_downto_3/Din] [get_bd_pins slice_size_2_downto_1/Din]
+  connect_bd_net -net axi_master_o_debug_state [get_bd_ports leds_4bits] [get_bd_pins axi_master/o_debug_state]
   connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins axi_master/i_clk] [get_bd_pins gpio_addr/s_axi_aclk] [get_bd_pins gpio_ctrl/s_axi_aclk] [get_bd_pins gpio_interconnect/ACLK] [get_bd_pins gpio_interconnect/M00_ACLK] [get_bd_pins gpio_interconnect/M01_ACLK] [get_bd_pins gpio_interconnect/M02_ACLK] [get_bd_pins gpio_interconnect/M03_ACLK] [get_bd_pins gpio_interconnect/S00_ACLK] [get_bd_pins gpio_rdata/s_axi_aclk] [get_bd_pins gpio_wdata/s_axi_aclk] [get_bd_pins master_interconnect/ACLK] [get_bd_pins master_interconnect/M00_ACLK] [get_bd_pins master_interconnect/S00_ACLK] [get_bd_pins ps/FCLK_CLK0] [get_bd_pins ps/M_AXI_GP0_ACLK] [get_bd_pins ps/S_AXI_HP0_ACLK]
   connect_bd_net -net ps_FCLK_RESET0_N [get_bd_pins gpio_addr/s_axi_aresetn] [get_bd_pins gpio_ctrl/s_axi_aresetn] [get_bd_pins gpio_interconnect/ARESETN] [get_bd_pins gpio_interconnect/M00_ARESETN] [get_bd_pins gpio_interconnect/M01_ARESETN] [get_bd_pins gpio_interconnect/M02_ARESETN] [get_bd_pins gpio_interconnect/M03_ARESETN] [get_bd_pins gpio_interconnect/S00_ARESETN] [get_bd_pins gpio_rdata/s_axi_aresetn] [get_bd_pins gpio_wdata/s_axi_aresetn] [get_bd_pins ps/FCLK_RESET0_N]
   connect_bd_net -net simple_axi_master_wr_0_o_done [get_bd_pins axi_master/o_done] [get_bd_pins concat_lsb_to_msb_wdei/In1]
@@ -369,7 +371,6 @@ proc create_root_design { parentCell } {
   # Restore current instance
   current_bd_instance $oldCurInst
 
-  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -381,4 +382,6 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
+
+common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 
