@@ -19,13 +19,20 @@ open_bd_design [lindex $bd_files 0]
 puts "--- Assigning Addresses ---"
 assign_bd_address
 
-# 3. Validate Design
-validate_bd_design
+# 3. CRITICAL: Validate the design to propagate the map
+validate_bd_design -force
 
-# 4. Save the modified design
+# 4. Save the BD to lock the addresses
 save_bd_design
 
-# 5. Generate Products
+# 5. Verify Address Editor state (Optional debug print)
+set segs [get_bd_addr_segs -hierarchical]
+if {[llength $segs] == 0} {
+    puts "ERROR: No address segments found after validation!"
+    exit 1
+}
+
+# 6. Generate Output Products
 generate_target all [get_files *.bd] -force
 puts "--- Block Design Generation Complete ---"
 
