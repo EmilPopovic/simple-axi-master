@@ -113,16 +113,12 @@ assign misaligned_request = (i_rw != RW_NOP) && (
 assign o_rdata       = (m_axi_rvalid && m_axi_rready) ? (m_axi_rdata >> (byte_offset * 8)) & size_mask : r_rdata;
 assign m_axi_awaddr  = r_addr;
 assign m_axi_awsize  = r_size;
-assign m_axi_awvalid = r_state < 4 && i_rw == RW_WRITE && !o_error ||
-                       r_state == S_W_SET_ADDR ||
-                       r_state == S_W_ADDR_WAIT;
+assign m_axi_awvalid = r_state == S_W_SET_ADDR || r_state == S_W_ADDR_WAIT;
 
 assign m_axi_wdata   = r_wdata << (byte_offset * 8);
 assign m_axi_araddr  = r_addr;
 assign m_axi_arsize  = r_size;
-assign m_axi_arvalid = r_state < 4 && i_rw == RW_READ && !o_error ||
-                       r_state == S_R_SET_ADDR ||
-                       r_state == S_R_ADDR_WAIT;
+assign m_axi_arvalid = r_state == S_R_SET_ADDR || r_state == S_R_ADDR_WAIT;
 
 // Sequential logic
 always_ff @(posedge i_clk) begin
