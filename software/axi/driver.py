@@ -47,11 +47,11 @@ class SimpleAxiMasterDriver:
         return self.gpio_ctrl.write(ctrl)
 
     @staticmethod
-    def __make_ctrl(clear: bool = False, cmd: MemOp = MemOp.IDLE, size: MemSize = MemSize.BYTE) -> int:
+    def __make_ctrl(clear: bool = False, cmd: MemOp | int = MemOp.IDLE, size: MemSize | int = MemSize.BYTE) -> int:
         # [5:5]=Clear, [4:3]=RW, [2:0]=Size, start transaction
         return (int(clear) << 5) | ((cmd & 0x3) << 3) | (size & 0x7)
 
-    def __execute(self, cmd: MemOp, size: MemSize, addr: int, data: int = 0) -> MemOpResult:
+    def _execute(self, cmd: MemOp | int, size: MemSize | int, addr: int, data: int = 0) -> MemOpResult:
         """Execute raw transfer"""
         self.addr = addr
 
@@ -84,31 +84,31 @@ class SimpleAxiMasterDriver:
         self.ctrl = self.__make_ctrl()
 
     def read(self, size: MemSize, addr: int) -> MemOpResult:
-        return self.__execute(MemOp.READ, size, addr)
+        return self._execute(MemOp.READ, size, addr)
     
     def read_byte(self, addr: int) -> MemOpResult:
-        return self.__execute(MemOp.READ, MemSize.BYTE, addr)
+        return self._execute(MemOp.READ, MemSize.BYTE, addr)
     
     def read_half(self, addr: int) -> MemOpResult:
-        return self.__execute(MemOp.READ, MemSize.HALF, addr)
+        return self._execute(MemOp.READ, MemSize.HALF, addr)
     
     def read_word(self, addr: int) -> MemOpResult:
-        return self.__execute(MemOp.READ, MemSize.WORD, addr)
+        return self._execute(MemOp.READ, MemSize.WORD, addr)
     
     def read_dword(self, addr: int) -> MemOpResult:
-        return self.__execute(MemOp.READ, MemSize.DWORD, addr)
+        return self._execute(MemOp.READ, MemSize.DWORD, addr)
 
     def write(self, size: MemSize, addr: int, data: int) -> MemOpStatus:
-        return self.__execute(MemOp.WRITE, size, addr, data).status
+        return self._execute(MemOp.WRITE, size, addr, data).status
     
     def write_byte(self, addr: int, data: int) -> MemOpStatus:
-        return self.__execute(MemOp.WRITE, MemSize.BYTE, addr, data).status
+        return self._execute(MemOp.WRITE, MemSize.BYTE, addr, data).status
     
     def write_half(self, addr: int, data: int) -> MemOpStatus:
-        return self.__execute(MemOp.WRITE, MemSize.HALF, addr, data).status
+        return self._execute(MemOp.WRITE, MemSize.HALF, addr, data).status
     
     def write_word(self, addr: int, data: int) -> MemOpStatus:
-        return self.__execute(MemOp.WRITE, MemSize.WORD, addr, data).status
+        return self._execute(MemOp.WRITE, MemSize.WORD, addr, data).status
     
     def write_dword(self, addr: int, data: int) -> MemOpStatus:
-        return self.__execute(MemOp.WRITE, MemSize.DWORD, addr, data).status
+        return self._execute(MemOp.WRITE, MemSize.DWORD, addr, data).status
