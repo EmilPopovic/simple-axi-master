@@ -58,36 +58,32 @@ class SimpleAxiMasterDriver:
         cmd: MemOp | int = MemOp.IDLE, 
         size: MemSize | int = MemSize.BYTE
     ) -> int:
-    # [6]=RSTN, [5]=Clear, [4:3]=RW, [2:0]=Size
-    val = (int(reset_n) << 6) | (int(clear) << 5) | ((cmd & 0x3) << 3) | (size & 0x7)
-    return val
+        # [6]=RSTN, [5]=Clear, [4:3]=RW, [2:0]=Size
+        val = (int(reset_n) << 6) | (int(clear) << 5) | ((cmd & 0x3) << 3) | (size & 0x7)
+        return val
 
     def _execute(self, cmd: MemOp | int, size: MemSize | int, addr: int, data: int = 0) -> MemOpResult:
-        """Execute raw transfer"""
         self.addr = addr
-
         if cmd == MemOp.WRITE:
             self.wdata = data & 0xFFFF_FFFF
 
-        self.ctrl = self.__make_ctrl(False, cmd, size)
+        self.ctrl = self.__make_ctrl(clear=False, reset_n=True, cmd=cmd, size=size)
+        self.ctrl = self.__make_ctrl(clear=False, reset_n=True, cmd=MemOp.IDLE, size=size)
 
         status = 0
-        for _ in range(100):
+        for _ in range(1000):
             status = self.status
             done = (status >> 1) & 0x1
             if done:
                 break
             time.sleep(0.001)
 
-        # Return to idle
-        self.ctrl = self.__make_ctrl()
-
-        # Read result
         result_data = 0
         if cmd == MemOp.READ:
             result_data = self.rdata
 
         return MemOpResult(MemOpStatus.from_reg(status), result_data)
+
     
     def clear(self) -> None:
         self.ctrl = self.__make_ctrl(clear=True)
