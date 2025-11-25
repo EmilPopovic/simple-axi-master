@@ -257,7 +257,7 @@ proc create_root_design { parentCell } {
     CONFIG.C_ALL_INPUTS_2 {1} \
     CONFIG.C_ALL_OUTPUTS {1} \
     CONFIG.C_GPIO2_WIDTH {4} \
-    CONFIG.C_GPIO_WIDTH {6} \
+    CONFIG.C_GPIO_WIDTH {7} \
     CONFIG.C_IS_DUAL {1} \
   ] $gpio_ctrl
 
@@ -303,6 +303,15 @@ proc create_root_design { parentCell } {
   ] $slice_clear_5_downto_5
 
 
+  # Create instance: slice_rstn_6_downto_6, and set properties
+  set slice_rstn_6_downto_6 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 slice_rstn_6_downto_6 ]
+  set_property -dict [list \
+    CONFIG.DIN_FROM {6} \
+    CONFIG.DIN_TO {6} \
+    CONFIG.DIN_WIDTH {7} \
+  ] $slice_rstn_6_downto_6
+
+
   # Create instance: slice_rw_4_downto_3, and set properties
   set slice_rw_4_downto_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlslice:1.0 slice_rw_4_downto_3 ]
   set_property -dict [list \
@@ -335,20 +344,26 @@ proc create_root_design { parentCell } {
   # Create port connections
   connect_bd_net -net axi_gpio_0_gpio_io_o [get_bd_pins axi_master/i_wdata] [get_bd_pins gpio_wdata/gpio_io_o]
   connect_bd_net -net axi_gpio_2_gpio_io_o [get_bd_pins axi_master/i_addr] [get_bd_pins gpio_addr/gpio_io_o]
-  connect_bd_net -net axi_gpio_3_gpio_io_o [get_bd_pins gpio_ctrl/gpio_io_o] [get_bd_pins slice_clear_5_downto_5/Din] [get_bd_pins slice_rw_4_downto_3/Din] [get_bd_pins slice_size_2_downto_1/Din]
+  connect_bd_net -net axi_gpio_3_gpio_io_o [get_bd_pins gpio_ctrl/gpio_io_o] [get_bd_pins slice_clear_5_downto_5/Din] [get_bd_pins slice_rstn_6_downto_6/Din] [get_bd_pins slice_rw_4_downto_3/Din] [get_bd_pins slice_size_2_downto_1/Din]
   connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins axi_master/i_clk] [get_bd_pins gpio_addr/s_axi_aclk] [get_bd_pins gpio_ctrl/s_axi_aclk] [get_bd_pins gpio_interconnect/ACLK] [get_bd_pins gpio_interconnect/M00_ACLK] [get_bd_pins gpio_interconnect/M01_ACLK] [get_bd_pins gpio_interconnect/M02_ACLK] [get_bd_pins gpio_interconnect/M03_ACLK] [get_bd_pins gpio_interconnect/S00_ACLK] [get_bd_pins gpio_rdata/s_axi_aclk] [get_bd_pins gpio_wdata/s_axi_aclk] [get_bd_pins master_interconnect/ACLK] [get_bd_pins master_interconnect/M00_ACLK] [get_bd_pins master_interconnect/S00_ACLK] [get_bd_pins ps/FCLK_CLK0] [get_bd_pins ps/M_AXI_GP0_ACLK] [get_bd_pins ps/S_AXI_HP0_ACLK]
-  connect_bd_net -net processing_system7_0_FCLK_RESET0_N [get_bd_pins axi_master/i_rstn] [get_bd_pins gpio_addr/s_axi_aresetn] [get_bd_pins gpio_ctrl/s_axi_aresetn] [get_bd_pins gpio_interconnect/ARESETN] [get_bd_pins gpio_interconnect/M00_ARESETN] [get_bd_pins gpio_interconnect/M01_ARESETN] [get_bd_pins gpio_interconnect/M02_ARESETN] [get_bd_pins gpio_interconnect/M03_ARESETN] [get_bd_pins gpio_interconnect/S00_ARESETN] [get_bd_pins gpio_rdata/s_axi_aresetn] [get_bd_pins gpio_wdata/s_axi_aresetn] [get_bd_pins master_interconnect/ARESETN] [get_bd_pins master_interconnect/M00_ARESETN] [get_bd_pins master_interconnect/S00_ARESETN] [get_bd_pins ps/FCLK_RESET0_N]
+  connect_bd_net -net ps_FCLK_RESET0_N [get_bd_pins gpio_addr/s_axi_aresetn] [get_bd_pins gpio_ctrl/s_axi_aresetn] [get_bd_pins gpio_interconnect/ARESETN] [get_bd_pins gpio_interconnect/M00_ARESETN] [get_bd_pins gpio_interconnect/M01_ARESETN] [get_bd_pins gpio_interconnect/M02_ARESETN] [get_bd_pins gpio_interconnect/M03_ARESETN] [get_bd_pins gpio_interconnect/S00_ARESETN] [get_bd_pins gpio_rdata/s_axi_aresetn] [get_bd_pins gpio_wdata/s_axi_aresetn] [get_bd_pins ps/FCLK_RESET0_N]
   connect_bd_net -net simple_axi_master_wr_0_o_done [get_bd_pins axi_master/o_done] [get_bd_pins concat_lsb_to_msb_wdei/In1]
   connect_bd_net -net simple_axi_master_wr_0_o_error [get_bd_pins axi_master/o_error] [get_bd_pins concat_lsb_to_msb_wdei/In2]
   connect_bd_net -net simple_axi_master_wr_0_o_invalid [get_bd_pins axi_master/o_invalid] [get_bd_pins concat_lsb_to_msb_wdei/In3]
   connect_bd_net -net simple_axi_master_wr_0_o_rdata [get_bd_pins axi_master/o_rdata] [get_bd_pins gpio_rdata/gpio_io_i]
   connect_bd_net -net simple_axi_master_wr_0_o_wait [get_bd_pins axi_master/o_wait] [get_bd_pins concat_lsb_to_msb_wdei/In0]
+  connect_bd_net -net slice_rstn_6_downto_6_Dout [get_bd_pins axi_master/i_rstn] [get_bd_pins master_interconnect/ARESETN] [get_bd_pins master_interconnect/M00_ARESETN] [get_bd_pins master_interconnect/S00_ARESETN] [get_bd_pins slice_rstn_6_downto_6/Dout]
   connect_bd_net -net xlconcat_0_dout [get_bd_pins concat_lsb_to_msb_wdei/dout] [get_bd_pins gpio_ctrl/gpio2_io_i]
   connect_bd_net -net xlslice_0_Dout [get_bd_pins axi_master/i_size] [get_bd_pins slice_size_2_downto_1/Dout]
   connect_bd_net -net xlslice_1_Dout [get_bd_pins axi_master/i_clear] [get_bd_pins slice_clear_5_downto_5/Dout]
   connect_bd_net -net xlslice_2_Dout [get_bd_pins axi_master/i_rw] [get_bd_pins slice_rw_4_downto_3/Dout]
 
   # Create address segments
+  assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces axi_master/m_axi] [get_bd_addr_segs ps/S_AXI_HP0/HP0_DDR_LOWOCM] -force
+  assign_bd_address -offset 0x41200000 -range 0x00010000 -target_address_space [get_bd_addr_spaces ps/Data] [get_bd_addr_segs gpio_addr/S_AXI/Reg] -force
+  assign_bd_address -offset 0x41210000 -range 0x00010000 -target_address_space [get_bd_addr_spaces ps/Data] [get_bd_addr_segs gpio_ctrl/S_AXI/Reg] -force
+  assign_bd_address -offset 0x41220000 -range 0x00010000 -target_address_space [get_bd_addr_spaces ps/Data] [get_bd_addr_segs gpio_rdata/S_AXI/Reg] -force
+  assign_bd_address -offset 0x41230000 -range 0x00010000 -target_address_space [get_bd_addr_spaces ps/Data] [get_bd_addr_segs gpio_wdata/S_AXI/Reg] -force
 
 
   # Restore current instance
