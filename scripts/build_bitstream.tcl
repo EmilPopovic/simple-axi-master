@@ -12,8 +12,20 @@ if {[llength $bd_files] == 0} {
     exit 1
 }
 
+# 1. Open the Design
 open_bd_design [lindex $bd_files 0]
 
+# 2. Assign Addresses
+puts "--- Assigning Addresses ---"
+assign_bd_address
+
+# 3. Validate Design
+validate_bd_design
+
+# 4. Save the modified design
+save_bd_design
+
+# 5. Generate Products
 generate_target all [get_files *.bd] -force
 puts "--- Block Design Generation Complete ---"
 
