@@ -16,6 +16,8 @@ class SimpleAxiMasterDriver:
         self.gpio_addr = self._ol.gpio_addr.channel1
         self.gpio_ctrl = self._ol.gpio_ctrl.channel1
         self.gpio_status = self._ol.gpio_ctrl.channel2
+        
+        self.ctrl = self.__make_ctrl()
 
     @property
     def rdata(self) -> int:
@@ -31,7 +33,7 @@ class SimpleAxiMasterDriver:
     
     @wdata.setter
     def wdata(self, data: int) -> None:
-        return self.gpio_wdata.write(data)
+        return self.gpio_wdata.write(data, 0xFFFFFFFF)
     
     @property
     def addr(self) -> int:
@@ -39,7 +41,7 @@ class SimpleAxiMasterDriver:
 
     @addr.setter
     def addr(self, addr: int) -> None:
-        return self.gpio_addr.write(addr)
+        return self.gpio_addr.write(addr, 0xFFFFFFFF)
     
     @property
     def ctrl(self) -> int:
@@ -47,12 +49,18 @@ class SimpleAxiMasterDriver:
 
     @ctrl.setter
     def ctrl(self, ctrl: int) -> None:
-        return self.gpio_ctrl.write(ctrl)
+        return self.gpio_ctrl.write(ctrl, 0xFFFFFFFF)
 
     @staticmethod
-    def __make_ctrl(clear: bool = False, cmd: MemOp | int = MemOp.IDLE, size: MemSize | int = MemSize.BYTE) -> int:
-        # [5:5]=Clear, [4:3]=RW, [2:0]=Size, start transaction
-        return (int(clear) << 5) | ((cmd & 0x3) << 3) | (size & 0x7)
+    def __make_ctrl(
+        clear: bool = False, 
+        reset_n: bool = True,
+        cmd: MemOp | int = MemOp.IDLE, 
+        size: MemSize | int = MemSize.BYTE
+    ) -> int:
+    # [6]=RSTN, [5]=Clear, [4:3]=RW, [2:0]=Size
+    val = (int(reset_n) << 6) | (int(clear) << 5) | ((cmd & 0x3) << 3) | (size & 0x7)
+    return val
 
     def _execute(self, cmd: MemOp | int, size: MemSize | int, addr: int, data: int = 0) -> MemOpResult:
         """Execute raw transfer"""
@@ -115,3 +123,8 @@ class SimpleAxiMasterDriver:
     
     def write_dword(self, addr: int, data: int) -> MemOpStatus:
         return self._execute(MemOp.WRITE, MemSize.DWORD, addr, data).status
+    
+    def hard_reset(self) -> None:
+        self.ctrl = self.__make_ctrl(reset_n=False)
+        time.sleep(0.01) # Hold reset
+        self.ctrl = self.__make_ctrl(reset_n=True)
