@@ -19,6 +19,8 @@ module simple_axi_master(
     input  logic        m_axi_awready,
     output logic [31:0] m_axi_awaddr,
     output logic [2:0]  m_axi_awsize,
+    output logic [3:0]  m_axi_awcache,
+    output logic [2:0]  m_axi_awprot,
 
     output logic        m_axi_wvalid,
     input  logic        m_axi_wready,
@@ -34,6 +36,8 @@ module simple_axi_master(
     input  logic        m_axi_arready,
     output logic [31:0] m_axi_araddr,
     output logic [2:0]  m_axi_arsize,
+    output logic [3:0]  m_axi_arcache,
+    output logic [2:0]  m_axi_arprot,
 
     input  logic        m_axi_rvalid,
     output logic        m_axi_rready,
@@ -114,11 +118,15 @@ assign o_rdata       = (m_axi_rvalid && m_axi_rready) ? (m_axi_rdata >> (byte_of
 assign m_axi_awaddr  = r_addr;
 assign m_axi_awsize  = r_size;
 assign m_axi_awvalid = r_state == S_W_SET_ADDR || r_state == S_W_ADDR_WAIT;
+assign m_axi_awcache = 4'b0011;
+assign m_axi_awprot  = 3'b000;
 
 assign m_axi_wdata   = r_wdata << (byte_offset * 8);
 assign m_axi_araddr  = r_addr;
 assign m_axi_arsize  = r_size;
 assign m_axi_arvalid = r_state == S_R_SET_ADDR || r_state == S_R_ADDR_WAIT;
+assign m_axi_arcache = 4'b0011;
+assign m_axi_arprot  = 3'b000;
 
 // Sequential logic
 always_ff @(posedge i_clk) begin

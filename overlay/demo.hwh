@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Tue Nov 25 20:49:01 2025" VIVADOVERSION="2022.2">
+<EDKSYSTEM EDWVERSION="1.2" TIMESTAMP="Tue Nov 25 22:26:27 2025" VIVADOVERSION="2022.2">
 
   <SYSTEMINFO ARCH="zynq" DEVICE="7z020" NAME="design_1" PACKAGE="clg400" SPEEDGRADE="-1"/>
 
@@ -243,6 +243,12 @@
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" LEFT="2" NAME="m_axi_awsize" RIGHT="0" SIGIS="undef"/>
+        <PORT DIR="O" LEFT="3" NAME="m_axi_awcache" RIGHT="0" SIGIS="undef"/>
+        <PORT DIR="O" LEFT="2" NAME="m_axi_awprot" RIGHT="0" SIGIS="undef" SIGNAME="axi_master_m_axi_awprot">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="master_interconnect" PORT="S00_AXI_awprot"/>
+          </CONNECTIONS>
+        </PORT>
         <PORT DIR="O" NAME="m_axi_wvalid" SIGIS="undef" SIGNAME="axi_master_m_axi_wvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="master_interconnect" PORT="S00_AXI_wvalid"/>
@@ -295,6 +301,12 @@
           </CONNECTIONS>
         </PORT>
         <PORT DIR="O" LEFT="2" NAME="m_axi_arsize" RIGHT="0" SIGIS="undef"/>
+        <PORT DIR="O" LEFT="3" NAME="m_axi_arcache" RIGHT="0" SIGIS="undef"/>
+        <PORT DIR="O" LEFT="2" NAME="m_axi_arprot" RIGHT="0" SIGIS="undef" SIGNAME="axi_master_m_axi_arprot">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="master_interconnect" PORT="S00_AXI_arprot"/>
+          </CONNECTIONS>
+        </PORT>
         <PORT DIR="I" NAME="m_axi_rvalid" SIGIS="undef" SIGNAME="axi_master_m_axi_rvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="master_interconnect" PORT="S00_AXI_rvalid"/>
@@ -332,8 +344,8 @@
           <PARAMETER NAME="READ_WRITE_MODE" VALUE="READ_WRITE"/>
           <PARAMETER NAME="HAS_BURST" VALUE="0"/>
           <PARAMETER NAME="HAS_LOCK" VALUE="0"/>
-          <PARAMETER NAME="HAS_PROT" VALUE="0"/>
-          <PARAMETER NAME="HAS_CACHE" VALUE="0"/>
+          <PARAMETER NAME="HAS_PROT" VALUE="1"/>
+          <PARAMETER NAME="HAS_CACHE" VALUE="1"/>
           <PARAMETER NAME="HAS_QOS" VALUE="0"/>
           <PARAMETER NAME="HAS_REGION" VALUE="0"/>
           <PARAMETER NAME="HAS_WSTRB" VALUE="1"/>
@@ -353,6 +365,8 @@
           <PORTMAPS>
             <PORTMAP LOGICAL="AWADDR" PHYSICAL="m_axi_awaddr"/>
             <PORTMAP LOGICAL="AWSIZE" PHYSICAL="m_axi_awsize"/>
+            <PORTMAP LOGICAL="AWCACHE" PHYSICAL="m_axi_awcache"/>
+            <PORTMAP LOGICAL="AWPROT" PHYSICAL="m_axi_awprot"/>
             <PORTMAP LOGICAL="AWVALID" PHYSICAL="m_axi_awvalid"/>
             <PORTMAP LOGICAL="AWREADY" PHYSICAL="m_axi_awready"/>
             <PORTMAP LOGICAL="WDATA" PHYSICAL="m_axi_wdata"/>
@@ -365,6 +379,8 @@
             <PORTMAP LOGICAL="BREADY" PHYSICAL="m_axi_bready"/>
             <PORTMAP LOGICAL="ARADDR" PHYSICAL="m_axi_araddr"/>
             <PORTMAP LOGICAL="ARSIZE" PHYSICAL="m_axi_arsize"/>
+            <PORTMAP LOGICAL="ARCACHE" PHYSICAL="m_axi_arcache"/>
+            <PORTMAP LOGICAL="ARPROT" PHYSICAL="m_axi_arprot"/>
             <PORTMAP LOGICAL="ARVALID" PHYSICAL="m_axi_arvalid"/>
             <PORTMAP LOGICAL="ARREADY" PHYSICAL="m_axi_arready"/>
             <PORTMAP LOGICAL="RDATA" PHYSICAL="m_axi_rdata"/>
@@ -1196,9 +1212,9 @@
         <PORT DIR="O" LEFT="6" NAME="gpio_io_o" RIGHT="0" SIGIS="undef" SIGNAME="gpio_ctrl_gpio_io_o">
           <CONNECTIONS>
             <CONNECTION INSTANCE="slice_clear_5_downto_5" PORT="Din"/>
+            <CONNECTION INSTANCE="slice_rstn_6_downto_6" PORT="Din"/>
             <CONNECTION INSTANCE="slice_rw_4_downto_3" PORT="Din"/>
             <CONNECTION INSTANCE="slice_size_2_downto_1" PORT="Din"/>
-            <CONNECTION INSTANCE="slice_rstn_6_downto_6" PORT="Din"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="I" LEFT="3" NAME="gpio2_io_i" RIGHT="0" SIGIS="undef" SIGNAME="concat_lsb_to_msb_wdei_dout">
@@ -3401,7 +3417,11 @@
             <CONNECTION INSTANCE="axi_master" PORT="m_axi_awaddr"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" NAME="S00_AXI_awprot" SIGIS="undef"/>
+        <PORT DIR="I" LEFT="2" NAME="S00_AXI_awprot" RIGHT="0" SIGIS="undef" SIGNAME="axi_master_m_axi_awprot">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="axi_master" PORT="m_axi_awprot"/>
+          </CONNECTIONS>
+        </PORT>
         <PORT DIR="I" NAME="S00_AXI_awvalid" SIGIS="undef" SIGNAME="axi_master_m_axi_awvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="axi_master" PORT="m_axi_awvalid"/>
@@ -3452,7 +3472,11 @@
             <CONNECTION INSTANCE="axi_master" PORT="m_axi_araddr"/>
           </CONNECTIONS>
         </PORT>
-        <PORT DIR="I" NAME="S00_AXI_arprot" SIGIS="undef"/>
+        <PORT DIR="I" LEFT="2" NAME="S00_AXI_arprot" RIGHT="0" SIGIS="undef" SIGNAME="axi_master_m_axi_arprot">
+          <CONNECTIONS>
+            <CONNECTION INSTANCE="axi_master" PORT="m_axi_arprot"/>
+          </CONNECTIONS>
+        </PORT>
         <PORT DIR="I" NAME="S00_AXI_arvalid" SIGIS="undef" SIGNAME="axi_master_m_axi_arvalid">
           <CONNECTIONS>
             <CONNECTION INSTANCE="axi_master" PORT="m_axi_arvalid"/>
@@ -5057,16 +5081,16 @@
         </PORT>
         <PORT DIR="O" NAME="FCLK_RESET0_N" POLARITY="ACTIVE_LOW" SIGIS="rst" SIGNAME="ps_FCLK_RESET0_N">
           <CONNECTIONS>
-            <CONNECTION INSTANCE="gpio_rdata" PORT="s_axi_aresetn"/>
-            <CONNECTION INSTANCE="gpio_wdata" PORT="s_axi_aresetn"/>
             <CONNECTION INSTANCE="gpio_addr" PORT="s_axi_aresetn"/>
             <CONNECTION INSTANCE="gpio_ctrl" PORT="s_axi_aresetn"/>
             <CONNECTION INSTANCE="gpio_interconnect" PORT="ARESETN"/>
-            <CONNECTION INSTANCE="gpio_interconnect" PORT="S00_ARESETN"/>
             <CONNECTION INSTANCE="gpio_interconnect" PORT="M00_ARESETN"/>
             <CONNECTION INSTANCE="gpio_interconnect" PORT="M01_ARESETN"/>
             <CONNECTION INSTANCE="gpio_interconnect" PORT="M02_ARESETN"/>
             <CONNECTION INSTANCE="gpio_interconnect" PORT="M03_ARESETN"/>
+            <CONNECTION INSTANCE="gpio_interconnect" PORT="S00_ARESETN"/>
+            <CONNECTION INSTANCE="gpio_rdata" PORT="s_axi_aresetn"/>
+            <CONNECTION INSTANCE="gpio_wdata" PORT="s_axi_aresetn"/>
           </CONNECTIONS>
         </PORT>
         <PORT DIR="IO" LEFT="53" NAME="MIO" RIGHT="0" SIGIS="undef" SIGNAME="ps_MIO">
@@ -5420,7 +5444,7 @@
         <PARAMETER NAME="DIN_WIDTH" VALUE="7"/>
         <PARAMETER NAME="DIN_FROM" VALUE="6"/>
         <PARAMETER NAME="DIN_TO" VALUE="6"/>
-        <PARAMETER NAME="Component_Name" VALUE="design_1_xlslice_0_0"/>
+        <PARAMETER NAME="Component_Name" VALUE="design_1_slice_rstn_6_downto_6_0"/>
         <PARAMETER NAME="DOUT_WIDTH" VALUE="1"/>
         <PARAMETER NAME="EDK_IPTYPE" VALUE="PERIPHERAL"/>
       </PARAMETERS>
@@ -5434,8 +5458,8 @@
           <CONNECTIONS>
             <CONNECTION INSTANCE="axi_master" PORT="i_rstn"/>
             <CONNECTION INSTANCE="master_interconnect" PORT="ARESETN"/>
-            <CONNECTION INSTANCE="master_interconnect" PORT="S00_ARESETN"/>
             <CONNECTION INSTANCE="master_interconnect" PORT="M00_ARESETN"/>
+            <CONNECTION INSTANCE="master_interconnect" PORT="S00_ARESETN"/>
           </CONNECTIONS>
         </PORT>
       </PORTS>

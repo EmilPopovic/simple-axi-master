@@ -32,6 +32,10 @@ module simple_axi_master_wrapper #(
     output wire [31:0] m_axi_awaddr,
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWSIZE" *)
     output wire [2:0]  m_axi_awsize,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWCACHE" *)
+    output wire [3:0]  m_axi_awcache,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi AWPROT" *)
+    output wire [2:0]  m_axi_awprot,
 
     // AXI4 Master Write Data Channel
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi WVALID" *)
@@ -62,6 +66,10 @@ module simple_axi_master_wrapper #(
     output wire [31:0] m_axi_araddr,
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARSIZE" *)
     output wire [2:0]  m_axi_arsize,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARCACHE" *)
+    output wire [3:0]  m_axi_arcache,
+    (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi ARPROT" *)
+    output wire [2:0]  m_axi_arprot,
 
     // AXI4 Master Read Data Channel
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi RVALID" *)
@@ -106,6 +114,8 @@ simple_axi_master simple_axi_master (
     .m_axi_awready  (m_axi_awready),
     .m_axi_awaddr   (m_axi_awaddr),
     .m_axi_awsize   (m_axi_awsize),
+    .m_axi_awcache  (m_axi_awcache),
+    .m_axi_awprot   (m_axi_awprot),
     .m_axi_wvalid   (m_axi_wvalid),
     .m_axi_wready   (m_axi_wready),
     .m_axi_wlast    (m_axi_wlast),
@@ -118,6 +128,8 @@ simple_axi_master simple_axi_master (
     .m_axi_arready  (m_axi_arready),
     .m_axi_araddr   (m_axi_araddr),
     .m_axi_arsize   (m_axi_arsize),
+    .m_axi_arcache  (m_axi_arcache),
+    .m_axi_arprot   (m_axi_arprot),
     .m_axi_rvalid   (m_axi_rvalid),
     .m_axi_rready   (m_axi_rready),
     .m_axi_rlast    (m_axi_rlast),
