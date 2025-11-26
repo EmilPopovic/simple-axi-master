@@ -1,10 +1,9 @@
 `timescale 1ns / 1ps
 
 module simple_axi_master_wrapper #(
-    parameter integer C_HOST_DATA_WIDTH = 32
+    parameter integer HOST_DATA_WIDTH = 32,
+    parameter integer DEBUG = 0
 ) (
-    output wire [3:0] o_debug_state,
-
     (* X_INTERFACE_INFO = "xilinx.com:signal:clock:1.0 i_clk CLK" *)
     (* X_INTERFACE_PARAMETER = "ASSOCIATED_BUSIF m_axi, ASSOCIATED_RESET i_rstn" *)
     input  wire        i_clk,
@@ -16,8 +15,8 @@ module simple_axi_master_wrapper #(
     // Host bus
     input  wire [2:0]  i_size,
     input  wire [31:0] i_addr,
-    input  wire [C_HOST_DATA_WIDTH-1:0] i_wdata,
-    output wire [C_HOST_DATA_WIDTH-1:0] o_rdata,
+    input  wire [HOST_DATA_WIDTH-1:0] i_wdata,
+    output wire [HOST_DATA_WIDTH-1:0] o_rdata,
     input  wire [1:0]  i_rw,
     output wire        o_wait,
     input  wire        i_clear,
@@ -99,14 +98,25 @@ module simple_axi_master_wrapper #(
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi RDATA" *)
     input  wire [63:0] m_axi_rdata,
     (* X_INTERFACE_INFO = "xilinx.com:interface:aximm:1.0 m_axi RRESP" *)
-    input  wire [1:0]  m_axi_rresp
+    input  wire [1:0]  m_axi_rresp,
+
+    // Debug signals
+    output wire [3:0]  o_debug_state,
+    output wire [31:0] o_debug_latency
 );
+
+generate
+    if (DEBUG == 0) begin : gen_no_debug
+        assign o_debug_state = 4'b0;
+        assign o_debug_latency = 32'b0;
+    end
+endgenerate
 
     wire [63:0] w_wrapped_wdata;
     wire [63:0] w_wrapped_rdata;
 
     generate
-        if (C_HOST_DATA_WIDTH == 32) begin
+        if (HOST_DATA_WIDTH == 32) begin
             assign w_wrapped_wdata = {32'b0, i_wdata};
             assign o_rdata = w_wrapped_rdata[31:0];
         end else begin
@@ -115,9 +125,9 @@ module simple_axi_master_wrapper #(
         end
     endgenerate
 
-simple_axi_master simple_axi_master (
-    .o_debug_state (o_debug_state),
-
+simple_axi_master #(
+    .DEBUG(DEBUG)
+) simple_axi_master (
     .i_clk          (i_clk),
     .i_rstn         (i_rstn),
     .i_size         (i_size),
@@ -162,7 +172,9 @@ simple_axi_master simple_axi_master (
     .m_axi_rready   (m_axi_rready),
     .m_axi_rlast    (m_axi_rlast),
     .m_axi_rdata    (m_axi_rdata),
-    .m_axi_rresp    (m_axi_rresp)
+    .m_axi_rresp    (m_axi_rresp),
+    .o_debug_state  (o_debug_state),
+    .o_debug_latency(o_debug_latency)
 );
 
 endmodule

@@ -12,6 +12,7 @@ class SimpleAxiMasterDriver:
         self.gpio_addr = self._ol.gpio_addr.channel1
         self.gpio_ctrl = self._ol.gpio_ctrl.channel1
         self.gpio_status = self._ol.gpio_ctrl.channel2
+        self.gpio_latency = self._ol.gpio_latency.channel1
         
         self.ctrl = self.__make_ctrl()
 
@@ -46,6 +47,10 @@ class SimpleAxiMasterDriver:
     @ctrl.setter
     def ctrl(self, ctrl: int) -> None:
         return self.gpio_ctrl.write(ctrl, 0xFFFFFFFF)
+    
+    @property
+    def latency(self) -> int:
+        return self.gpio_latency.read()
 
     @staticmethod
     def __make_ctrl(
@@ -78,8 +83,7 @@ class SimpleAxiMasterDriver:
         if cmd == MemOp.READ:
             result_data = self.rdata
 
-        return MemOpResult(MemOpStatus.from_reg(status), result_data)
-
+        return MemOpResult(MemOpStatus.from_reg(status), result_data, self.latency)
     
     def clear(self) -> None:
         self.ctrl = self.__make_ctrl(clear=True)
@@ -101,22 +105,22 @@ class SimpleAxiMasterDriver:
     def read_dword(self, addr: int) -> MemOpResult:
         return self._execute(MemOp.READ, MemSize.DWORD, addr)
 
-    def write(self, size: MemSize, addr: int, data: int) -> MemOpStatus:
-        return self._execute(MemOp.WRITE, size, addr, data).status
+    def write(self, size: MemSize, addr: int, data: int) -> MemOpResult:
+        return self._execute(MemOp.WRITE, size, addr, data)
     
-    def write_byte(self, addr: int, data: int) -> MemOpStatus:
-        return self._execute(MemOp.WRITE, MemSize.BYTE, addr, data).status
+    def write_byte(self, addr: int, data: int) -> MemOpResult:
+        return self._execute(MemOp.WRITE, MemSize.BYTE, addr, data)
     
-    def write_half(self, addr: int, data: int) -> MemOpStatus:
-        return self._execute(MemOp.WRITE, MemSize.HALF, addr, data).status
+    def write_half(self, addr: int, data: int) -> MemOpResult:
+        return self._execute(MemOp.WRITE, MemSize.HALF, addr, data)
     
-    def write_word(self, addr: int, data: int) -> MemOpStatus:
-        return self._execute(MemOp.WRITE, MemSize.WORD, addr, data).status
+    def write_word(self, addr: int, data: int) -> MemOpResult:
+        return self._execute(MemOp.WRITE, MemSize.WORD, addr, data)
     
-    def write_dword(self, addr: int, data: int) -> MemOpStatus:
-        return self._execute(MemOp.WRITE, MemSize.DWORD, addr, data).status
+    def write_dword(self, addr: int, data: int) -> MemOpResult:
+        return self._execute(MemOp.WRITE, MemSize.DWORD, addr, data)
     
     def hard_reset(self) -> None:
         self.ctrl = self.__make_ctrl(reset_n=False)
-        time.sleep(0.01) # Hold reset
+        time.sleep(0.01)
         self.ctrl = self.__make_ctrl(reset_n=True)

@@ -42,6 +42,7 @@ class MemOpStatus(str, Enum):
             return MemOpStatus.NONE
 
 class MemOpResult:
-    def __init__(self, status: MemOpStatus, data: int) -> None:
+    def __init__(self, status: MemOpStatus, data: int, latency: int) -> None:
         self.status = status
         self.data = data
+        self.latency = latency

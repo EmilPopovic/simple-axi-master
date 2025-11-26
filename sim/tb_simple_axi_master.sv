@@ -45,6 +45,9 @@ logic [63:0] axi_rdata = 0;
 logic [1:0]  axi_rresp = 2'b00;
 logic        axi_rlast = 0;
 
+// Debug signals
+logic [31:0] debug_latency = 0;
+
 // Master instance
 simple_axi_master dut (
     .i_clk(clk),
@@ -84,7 +87,9 @@ simple_axi_master dut (
     .m_axi_rready(axi_rready),
     .m_axi_rlast(axi_rlast),
     .m_axi_rdata(axi_rdata),
-    .m_axi_rresp(axi_rresp)
+    .m_axi_rresp(axi_rresp),
+    
+    .o_debug_latency(debug_latency)
 );
 
 // Clock generation
@@ -121,8 +126,8 @@ task dump_memory(input string title = "Memory");
 endtask
 
 task display_status(input string msg = "");
-    $display("  Status: done=%0b, error=%0b, invalid=%0b, wait=%0b %s",
-             done, error, invalid, wait_sig, msg);
+    $display("  Status: done=%0b, error=%0b, invalid=%0b, wait=%0b, latency=%0d %s",
+             done, error, invalid, wait_sig, debug_latency, msg);
 endtask
 
 // AXI slave

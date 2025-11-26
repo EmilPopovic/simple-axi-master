@@ -1,8 +1,8 @@
 `timescale 1ns / 1ps
 
-module simple_axi_master(
-    output logic [3:0] o_debug_state,
-
+module simple_axi_master #(
+    parameter DEBUG = 0
+)(
     input  logic        i_clk,
     input  logic        i_rstn,
 
@@ -53,7 +53,10 @@ module simple_axi_master(
     output logic        m_axi_rready,
     input  logic        m_axi_rlast,
     input  logic [63:0] m_axi_rdata,
-    input  logic [1:0]  m_axi_rresp
+    input  logic [1:0]  m_axi_rresp,
+
+    output logic [3:0]  o_debug_state,
+    output logic [31:0] o_debug_latency
 );
 
 typedef enum logic [1:0] {
@@ -91,15 +94,43 @@ typedef enum logic [3:0] {
 } state_e;
 
 // Internal registers
-state_e        r_state;
-state_e        r_next_state;
-logic [31:0]   r_addr;
-logic [63:0]   r_wdata;
-logic [2:0]    r_size;
-logic [1:0]    r_rw;
-logic [63:0]   r_rdata;
+state_e      r_state;
+state_e      r_next_state;
+logic [31:0] r_addr;
+logic [63:0] r_wdata;
+logic [2:0]  r_size;
+logic [1:0]  r_rw;
+logic [63:0] r_rdata;
+logic        r_timer_active;
+logic [31:0] r_cycle_count;
 
-assign o_debug_state = r_state;
+generate
+    if (DEBUG) begin : gen_debug
+        assign o_debug_state = r_state;
+    end else begin : gen_no_debug
+        assign o_debug_state = 4'b0;
+    end
+endgenerate
+
+always_ff @(posedge i_clk) begin
+    if (!i_rstn || i_clear) begin
+        r_timer_active  <= 0;
+        r_cycle_count   <= 0;
+        o_debug_latency <= 0;
+    end else begin
+        if (r_state < 4 && i_rw != RW_NOP) begin
+            r_timer_active <= 1;
+            r_cycle_count  <= 0;
+        end
+        else if (o_done) begin
+            r_timer_active  <= 0;
+            o_debug_latency <= r_cycle_count;
+        end
+        else begin
+            r_cycle_count <= r_cycle_count + 1;
+        end
+    end
+end
 
 // Alignment handling
 logic [63:0] size_mask;
