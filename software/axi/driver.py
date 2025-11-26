@@ -6,10 +6,6 @@ from .enums import MemOp, MemSize, MemOpStatus, MemOpResult
 class SimpleAxiMasterDriver:
     def __init__(self, overlay_path: str) -> None:
         self._ol = Overlay(overlay_path)
-        
-        print("Parsing HWH:", self._ol.is_loaded())
-        print("Available IPs:", list(self._ol.ip_dict.keys()))
-        print("Hierarchy:", list(self._ol.hierarchy_dict.keys()))
 
         self.gpio_wdata = self._ol.gpio_wdata.channel1
         self.gpio_rdata = self._ol.gpio_rdata.channel1
