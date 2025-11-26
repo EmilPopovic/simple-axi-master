@@ -238,7 +238,10 @@ proc create_root_design { parentCell } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
-    set_property CONFIG.DEBUG {1} $axi_master
+    set_property -dict [list \
+    CONFIG.DEBUG {1} \
+    CONFIG.WIDTH {32} \
+  ] $axi_master
 
 
   # Create instance: concat_lsb_to_msb_wdei, and set properties
@@ -294,8 +297,38 @@ proc create_root_design { parentCell } {
   # Create instance: ps, and set properties
   set ps [ create_bd_cell -type ip -vlnv xilinx.com:ip:processing_system7:5.5 ps ]
   set_property -dict [list \
+    CONFIG.PCW_ACT_APU_PERIPHERAL_FREQMHZ {666.666687} \
+    CONFIG.PCW_ACT_CAN_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_DCI_PERIPHERAL_FREQMHZ {10.158730} \
+    CONFIG.PCW_ACT_ENET0_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_ENET1_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_FPGA0_PERIPHERAL_FREQMHZ {100.000000} \
+    CONFIG.PCW_ACT_FPGA1_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_FPGA2_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_FPGA3_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_PCAP_PERIPHERAL_FREQMHZ {200.000000} \
+    CONFIG.PCW_ACT_QSPI_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_SDIO_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_SMC_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_SPI_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_TPIU_PERIPHERAL_FREQMHZ {200.000000} \
+    CONFIG.PCW_ACT_TTC0_CLK0_PERIPHERAL_FREQMHZ {111.111115} \
+    CONFIG.PCW_ACT_TTC0_CLK1_PERIPHERAL_FREQMHZ {111.111115} \
+    CONFIG.PCW_ACT_TTC0_CLK2_PERIPHERAL_FREQMHZ {111.111115} \
+    CONFIG.PCW_ACT_TTC1_CLK0_PERIPHERAL_FREQMHZ {111.111115} \
+    CONFIG.PCW_ACT_TTC1_CLK1_PERIPHERAL_FREQMHZ {111.111115} \
+    CONFIG.PCW_ACT_TTC1_CLK2_PERIPHERAL_FREQMHZ {111.111115} \
+    CONFIG.PCW_ACT_UART_PERIPHERAL_FREQMHZ {10.000000} \
+    CONFIG.PCW_ACT_WDT_PERIPHERAL_FREQMHZ {111.111115} \
+    CONFIG.PCW_CLK0_FREQ {100000000} \
+    CONFIG.PCW_CLK1_FREQ {10000000} \
+    CONFIG.PCW_CLK2_FREQ {10000000} \
+    CONFIG.PCW_CLK3_FREQ {10000000} \
+    CONFIG.PCW_DDR_RAM_HIGHADDR {0x1FFFFFFF} \
+    CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {100} \
     CONFIG.PCW_FPGA_FCLK0_ENABLE {1} \
-    CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {64} \
+    CONFIG.PCW_S_AXI_HP0_DATA_WIDTH {32} \
+    CONFIG.PCW_UIPARAM_ACT_DDR_FREQ_MHZ {533.333374} \
     CONFIG.PCW_USE_S_AXI_HP0 {1} \
   ] $ps
 
@@ -338,15 +371,15 @@ proc create_root_design { parentCell } {
 
   # Create interface connections
   connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_pins gpio_interconnect/S00_AXI] [get_bd_intf_pins ps/M_AXI_GP0]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins master_interconnect/M00_AXI] [get_bd_intf_pins ps/S_AXI_HP0]
   connect_bd_intf_net -intf_net axi_interconnect_1_M00_AXI [get_bd_intf_pins gpio_interconnect/M00_AXI] [get_bd_intf_pins gpio_wdata/S_AXI]
   connect_bd_intf_net -intf_net axi_interconnect_1_M01_AXI [get_bd_intf_pins gpio_interconnect/M01_AXI] [get_bd_intf_pins gpio_rdata/S_AXI]
   connect_bd_intf_net -intf_net axi_interconnect_1_M02_AXI [get_bd_intf_pins gpio_addr/S_AXI] [get_bd_intf_pins gpio_interconnect/M02_AXI]
   connect_bd_intf_net -intf_net axi_interconnect_1_M03_AXI [get_bd_intf_pins gpio_ctrl/S_AXI] [get_bd_intf_pins gpio_interconnect/M03_AXI]
+  connect_bd_intf_net -intf_net axi_master_m_axi [get_bd_intf_pins axi_master/m_axi] [get_bd_intf_pins master_interconnect/S00_AXI]
   connect_bd_intf_net -intf_net gpio_interconnect_M04_AXI [get_bd_intf_pins gpio_interconnect/M04_AXI] [get_bd_intf_pins gpio_latency/S_AXI]
+  connect_bd_intf_net -intf_net master_interconnect_M00_AXI [get_bd_intf_pins master_interconnect/M00_AXI] [get_bd_intf_pins ps/S_AXI_HP0]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins ps/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins ps/FIXED_IO]
-  connect_bd_intf_net -intf_net simple_axi_master_wr_0_m_axi [get_bd_intf_pins axi_master/m_axi] [get_bd_intf_pins master_interconnect/S00_AXI]
 
   # Create port connections
   connect_bd_net -net axi_gpio_0_gpio_io_o [get_bd_pins axi_master/i_wdata] [get_bd_pins gpio_wdata/gpio_io_o]

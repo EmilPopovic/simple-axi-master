@@ -1,62 +1,63 @@
 `timescale 1ns / 1ps
 
 module simple_axi_master #(
+    parameter WIDTH = 32,
     parameter DEBUG = 0
 )(
-    input  logic        i_clk,
-    input  logic        i_rstn,
+    input  logic             i_clk,
+    input  logic             i_rstn,
 
-    input  logic [2:0]  i_size,     // 0-byte, 1-half, 2-word, 3-dword
-    input  logic [31:0] i_addr,     // Address bus
-    input  logic [63:0] i_wdata,    // Write data bus
-    output logic [63:0] o_rdata,    // Read data bus
-    input  logic [1:0]  i_rw,       // 00-idle, 01-write, 10-read, 11-reserved
-    output logic        o_wait,     // Transfer active
-    input  logic        i_clear,    // Clear done, error and invalid
-    output logic        o_done,     // 1 after completing transfer
-    output logic        o_error,    // Transaction failed
-    output logic        o_invalid,  // Requested invalid address
+    input  logic [2:0]       i_size,    // 0-byte, 1-half, 2-word, 3-dword
+    input  logic [31:0]      i_addr,    // Address bus
+    input  logic [WIDTH-1:0] i_wdata,   // Write data bus
+    output logic [WIDTH-1:0] o_rdata,   // Read data bus
+    input  logic [1:0]       i_rw,      // 00-idle, 01-write, 10-read, 11-reserved
+    output logic             o_wait,    // Transfer active
+    input  logic             i_clear,   // Clear done, error and invalid
+    output logic             o_done,    // 1 after completing transfer
+    output logic             o_error,   // Transaction failed
+    output logic             o_invalid, // Requested invalid address
 
-    output logic        m_axi_awvalid,
-    input  logic        m_axi_awready,
-    output logic [31:0] m_axi_awaddr,
-    output logic [2:0]  m_axi_awsize,
-    output logic [3:0]  m_axi_awcache,
-    output logic [2:0]  m_axi_awprot,
-    output logic [1:0]  m_axi_awburst,
-    output logic [7:0]  m_axi_awlen,
-    output logic        m_axi_awlock,
-    output logic [3:0]  m_axi_awqos,
+    output logic             m_axi_awvalid,
+    input  logic             m_axi_awready,
+    output logic [31:0]      m_axi_awaddr,
+    output logic [2:0]       m_axi_awsize,
+    output logic [3:0]       m_axi_awcache,
+    output logic [2:0]       m_axi_awprot,
+    output logic [1:0]       m_axi_awburst,
+    output logic [7:0]       m_axi_awlen,
+    output logic             m_axi_awlock,
+    output logic [3:0]       m_axi_awqos,
 
-    output logic        m_axi_wvalid,
-    input  logic        m_axi_wready,
-    output logic        m_axi_wlast,
-    output logic [63:0] m_axi_wdata,
-    output logic [7:0]  m_axi_wstrb,
+    output logic             m_axi_wvalid,
+    input  logic             m_axi_wready,
+    output logic             m_axi_wlast,
+    output logic [WIDTH-1:0] m_axi_wdata,
+    output logic [WIDTH/8:0] m_axi_wstrb,
 
-    input  logic        m_axi_bvalid,
-    output logic        m_axi_bready,
-    input  logic [1:0]  m_axi_bresp,
+    input  logic             m_axi_bvalid,
+    output logic             m_axi_bready,
+    input  logic [1:0]       m_axi_bresp,
 
-    output logic        m_axi_arvalid,
-    input  logic        m_axi_arready,
-    output logic [31:0] m_axi_araddr,
-    output logic [2:0]  m_axi_arsize,
-    output logic [3:0]  m_axi_arcache,
-    output logic [2:0]  m_axi_arprot,
-    output logic [1:0]  m_axi_arburst,
-    output logic [7:0]  m_axi_arlen,
-    output logic        m_axi_arlock,
-    output logic [3:0]  m_axi_arqos,
+    output logic             m_axi_arvalid,
+    input  logic             m_axi_arready,
+    output logic [31:0]      m_axi_araddr,
+    output logic [2:0]       m_axi_arsize,
+    output logic [3:0]       m_axi_arcache,
+    output logic [2:0]       m_axi_arprot,
+    output logic [1:0]       m_axi_arburst,
+    output logic [7:0]       m_axi_arlen,
+    output logic             m_axi_arlock,
+    output logic [3:0]       m_axi_arqos,
 
-    input  logic        m_axi_rvalid,
-    output logic        m_axi_rready,
-    input  logic        m_axi_rlast,
-    input  logic [63:0] m_axi_rdata,
-    input  logic [1:0]  m_axi_rresp,
+    input  logic             m_axi_rvalid,
+    output logic             m_axi_rready,
+    input  logic             m_axi_rlast,
+    input  logic [WIDTH-1:0] m_axi_rdata,
+    input  logic [1:0]       m_axi_rresp,
 
-    output logic [3:0]  o_debug_state,
-    output logic [31:0] o_debug_latency
+    output logic [3:0]       o_debug_state,
+    output logic [31:0]      o_debug_latency
 );
 
 typedef enum logic [1:0] {
@@ -133,21 +134,47 @@ always_ff @(posedge i_clk) begin
 end
 
 // Alignment handling
-logic [63:0] size_mask;
-assign size_mask = (r_size == SIZE_BYTE) ? 64'h00000000_000000FF :
-                   (r_size == SIZE_HALF) ? 64'h00000000_0000FFFF :
-                   (r_size == SIZE_WORD) ? 64'h00000000_FFFFFFFF :
-                                           64'hFFFFFFFF_FFFFFFFF;
-
-logic [2:0] byte_offset;
-assign byte_offset = r_addr[2:0];
-logic [7:0] base_strb;
-assign base_strb = (r_size == SIZE_BYTE)  ? 8'b0000_0001 :
-                   (r_size == SIZE_HALF)  ? 8'b0000_0011 :
-                   (r_size == SIZE_WORD)  ? 8'b0000_1111 :
-                   (r_size == SIZE_DWORD) ? 8'b1111_1111 :
-                                            8'b0000_0000;
+logic [WIDTH-1:0] size_mask;
+logic [WIDTH/8-1:0] base_strb;
+logic [$clog2(WIDTH/8)-1:0] byte_offset;
+assign byte_offset = r_addr[$clog2(WIDTH/8)-1:0];
 assign m_axi_wstrb = base_strb << byte_offset;
+
+generate
+    if (WIDTH == 64) begin
+        always_comb begin
+            case (r_size)
+                SIZE_BYTE: size_mask = 64'h00000000_000000FF;
+                SIZE_HALF: size_mask = 64'h00000000_0000FFFF;
+                SIZE_WORD: size_mask = 64'h00000000_FFFFFFFF;
+                default:   size_mask = 64'hFFFFFFFF_FFFFFFFF;
+            endcase
+
+            case (r_size)
+                SIZE_BYTE: base_strb = 8'b0000_0001;
+                SIZE_HALF: base_strb = 8'b0000_0011;
+                SIZE_WORD: base_strb = 8'b0000_1111;
+                default:   base_strb = 8'b1111_1111;
+            endcase
+        end
+        
+    end else begin
+        always_comb begin
+            case (r_size)
+                SIZE_BYTE: size_mask = 32'h000000FF;
+                SIZE_HALF: size_mask = 32'h0000FFFF;
+                default:   size_mask = 32'hFFFFFFFF;
+            endcase
+
+            case (r_size)
+                SIZE_BYTE: base_strb = 4'b0001;
+                SIZE_HALF: base_strb = 4'b0011;
+                SIZE_WORD: base_strb = 4'b1111;
+                default:   base_strb = 4'b1111;
+            endcase
+        end
+    end
+endgenerate
 
 logic misaligned_request;
 assign misaligned_request = (i_rw != RW_NOP) && (

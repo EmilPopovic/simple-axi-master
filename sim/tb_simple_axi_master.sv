@@ -49,7 +49,10 @@ logic        axi_rlast = 0;
 logic [31:0] debug_latency = 0;
 
 // Master instance
-simple_axi_master dut (
+simple_axi_master #(
+    .WIDTH(64),
+    .DEBUG(1)
+) dut (
     .i_clk(clk),
     .i_rstn(rstn),
     .i_addr(addr),
