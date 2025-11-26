@@ -227,6 +227,8 @@ proc create_root_design { parentCell } {
 
   # Create ports
   set leds_4bits [ create_bd_port -dir O -from 3 -to 0 leds_4bits ]
+  set rgb_leds [ create_bd_port -dir O -from 5 -to 0 rgb_leds ]
+  set switches [ create_bd_port -dir I -from 1 -to 0 switches ]
 
   # Create instance: axi_master, and set properties
   set block_name simple_axi_master_wrapper
@@ -266,6 +268,17 @@ proc create_root_design { parentCell } {
   ] $gpio_ctrl
 
 
+  # Create instance: gpio_devices, and set properties
+  set gpio_devices [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_gpio:2.0 gpio_devices ]
+  set_property -dict [list \
+    CONFIG.C_ALL_INPUTS_2 {1} \
+    CONFIG.C_ALL_OUTPUTS {1} \
+    CONFIG.C_GPIO2_WIDTH {2} \
+    CONFIG.C_GPIO_WIDTH {6} \
+    CONFIG.C_IS_DUAL {1} \
+  ] $gpio_devices
+
+
   # Create instance: gpio_interconnect, and set properties
   set gpio_interconnect [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 gpio_interconnect ]
   set_property CONFIG.NUM_MI {5} $gpio_interconnect
@@ -291,7 +304,7 @@ proc create_root_design { parentCell } {
 
   # Create instance: master_interconnect, and set properties
   set master_interconnect [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 master_interconnect ]
-  set_property CONFIG.NUM_MI {1} $master_interconnect
+  set_property CONFIG.NUM_MI {2} $master_interconnect
 
 
   # Create instance: ps, and set properties
@@ -378,29 +391,33 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net axi_master_m_axi [get_bd_intf_pins axi_master/m_axi] [get_bd_intf_pins master_interconnect/S00_AXI]
   connect_bd_intf_net -intf_net gpio_interconnect_M04_AXI [get_bd_intf_pins gpio_interconnect/M04_AXI] [get_bd_intf_pins gpio_latency/S_AXI]
   connect_bd_intf_net -intf_net master_interconnect_M00_AXI [get_bd_intf_pins master_interconnect/M00_AXI] [get_bd_intf_pins ps/S_AXI_HP0]
+  connect_bd_intf_net -intf_net master_interconnect_M01_AXI [get_bd_intf_pins gpio_devices/S_AXI] [get_bd_intf_pins master_interconnect/M01_AXI]
   connect_bd_intf_net -intf_net processing_system7_0_DDR [get_bd_intf_ports DDR] [get_bd_intf_pins ps/DDR]
   connect_bd_intf_net -intf_net processing_system7_0_FIXED_IO [get_bd_intf_ports FIXED_IO] [get_bd_intf_pins ps/FIXED_IO]
 
   # Create port connections
   connect_bd_net -net axi_gpio_0_gpio_io_o [get_bd_pins axi_master/i_wdata] [get_bd_pins gpio_wdata/gpio_io_o]
+  connect_bd_net -net axi_gpio_0_gpio_io_o1 [get_bd_ports rgb_leds] [get_bd_pins gpio_devices/gpio_io_o]
   connect_bd_net -net axi_gpio_2_gpio_io_o [get_bd_pins axi_master/i_addr] [get_bd_pins gpio_addr/gpio_io_o]
   connect_bd_net -net axi_gpio_3_gpio_io_o [get_bd_pins gpio_ctrl/gpio_io_o] [get_bd_pins slice_clear_5_downto_5/Din] [get_bd_pins slice_rstn_6_downto_6/Din] [get_bd_pins slice_rw_4_downto_3/Din] [get_bd_pins slice_size_2_downto_1/Din]
   connect_bd_net -net axi_master_o_debug_latency [get_bd_pins axi_master/o_debug_latency] [get_bd_pins gpio_latency/gpio_io_i]
   connect_bd_net -net axi_master_o_debug_state [get_bd_ports leds_4bits] [get_bd_pins axi_master/o_debug_state]
-  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins axi_master/i_clk] [get_bd_pins gpio_addr/s_axi_aclk] [get_bd_pins gpio_ctrl/s_axi_aclk] [get_bd_pins gpio_interconnect/ACLK] [get_bd_pins gpio_interconnect/M00_ACLK] [get_bd_pins gpio_interconnect/M01_ACLK] [get_bd_pins gpio_interconnect/M02_ACLK] [get_bd_pins gpio_interconnect/M03_ACLK] [get_bd_pins gpio_interconnect/M04_ACLK] [get_bd_pins gpio_interconnect/S00_ACLK] [get_bd_pins gpio_latency/s_axi_aclk] [get_bd_pins gpio_rdata/s_axi_aclk] [get_bd_pins gpio_wdata/s_axi_aclk] [get_bd_pins master_interconnect/ACLK] [get_bd_pins master_interconnect/M00_ACLK] [get_bd_pins master_interconnect/S00_ACLK] [get_bd_pins ps/FCLK_CLK0] [get_bd_pins ps/M_AXI_GP0_ACLK] [get_bd_pins ps/S_AXI_HP0_ACLK]
+  connect_bd_net -net gpio2_io_i_0_1 [get_bd_ports switches] [get_bd_pins gpio_devices/gpio2_io_i]
+  connect_bd_net -net processing_system7_0_FCLK_CLK0 [get_bd_pins axi_master/i_clk] [get_bd_pins gpio_addr/s_axi_aclk] [get_bd_pins gpio_ctrl/s_axi_aclk] [get_bd_pins gpio_devices/s_axi_aclk] [get_bd_pins gpio_interconnect/ACLK] [get_bd_pins gpio_interconnect/M00_ACLK] [get_bd_pins gpio_interconnect/M01_ACLK] [get_bd_pins gpio_interconnect/M02_ACLK] [get_bd_pins gpio_interconnect/M03_ACLK] [get_bd_pins gpio_interconnect/M04_ACLK] [get_bd_pins gpio_interconnect/S00_ACLK] [get_bd_pins gpio_latency/s_axi_aclk] [get_bd_pins gpio_rdata/s_axi_aclk] [get_bd_pins gpio_wdata/s_axi_aclk] [get_bd_pins master_interconnect/ACLK] [get_bd_pins master_interconnect/M00_ACLK] [get_bd_pins master_interconnect/M01_ACLK] [get_bd_pins master_interconnect/S00_ACLK] [get_bd_pins ps/FCLK_CLK0] [get_bd_pins ps/M_AXI_GP0_ACLK] [get_bd_pins ps/S_AXI_HP0_ACLK]
   connect_bd_net -net ps_FCLK_RESET0_N [get_bd_pins gpio_addr/s_axi_aresetn] [get_bd_pins gpio_ctrl/s_axi_aresetn] [get_bd_pins gpio_interconnect/ARESETN] [get_bd_pins gpio_interconnect/M00_ARESETN] [get_bd_pins gpio_interconnect/M01_ARESETN] [get_bd_pins gpio_interconnect/M02_ARESETN] [get_bd_pins gpio_interconnect/M03_ARESETN] [get_bd_pins gpio_interconnect/M04_ARESETN] [get_bd_pins gpio_interconnect/S00_ARESETN] [get_bd_pins gpio_latency/s_axi_aresetn] [get_bd_pins gpio_rdata/s_axi_aresetn] [get_bd_pins gpio_wdata/s_axi_aresetn] [get_bd_pins ps/FCLK_RESET0_N]
   connect_bd_net -net simple_axi_master_wr_0_o_done [get_bd_pins axi_master/o_done] [get_bd_pins concat_lsb_to_msb_wdei/In1]
   connect_bd_net -net simple_axi_master_wr_0_o_error [get_bd_pins axi_master/o_error] [get_bd_pins concat_lsb_to_msb_wdei/In2]
   connect_bd_net -net simple_axi_master_wr_0_o_invalid [get_bd_pins axi_master/o_invalid] [get_bd_pins concat_lsb_to_msb_wdei/In3]
   connect_bd_net -net simple_axi_master_wr_0_o_rdata [get_bd_pins axi_master/o_rdata] [get_bd_pins gpio_rdata/gpio_io_i]
   connect_bd_net -net simple_axi_master_wr_0_o_wait [get_bd_pins axi_master/o_wait] [get_bd_pins concat_lsb_to_msb_wdei/In0]
-  connect_bd_net -net slice_rstn_6_downto_6_Dout [get_bd_pins axi_master/i_rstn] [get_bd_pins master_interconnect/ARESETN] [get_bd_pins master_interconnect/M00_ARESETN] [get_bd_pins master_interconnect/S00_ARESETN] [get_bd_pins slice_rstn_6_downto_6/Dout]
+  connect_bd_net -net slice_rstn_6_downto_6_Dout [get_bd_pins axi_master/i_rstn] [get_bd_pins gpio_devices/s_axi_aresetn] [get_bd_pins master_interconnect/ARESETN] [get_bd_pins master_interconnect/M00_ARESETN] [get_bd_pins master_interconnect/M01_ARESETN] [get_bd_pins master_interconnect/S00_ARESETN] [get_bd_pins slice_rstn_6_downto_6/Dout]
   connect_bd_net -net xlconcat_0_dout [get_bd_pins concat_lsb_to_msb_wdei/dout] [get_bd_pins gpio_ctrl/gpio2_io_i]
   connect_bd_net -net xlslice_0_Dout [get_bd_pins axi_master/i_size] [get_bd_pins slice_size_2_downto_1/Dout]
   connect_bd_net -net xlslice_1_Dout [get_bd_pins axi_master/i_clear] [get_bd_pins slice_clear_5_downto_5/Dout]
   connect_bd_net -net xlslice_2_Dout [get_bd_pins axi_master/i_rw] [get_bd_pins slice_rw_4_downto_3/Dout]
 
   # Create address segments
+  assign_bd_address -offset 0x40000000 -range 0x00010000 -target_address_space [get_bd_addr_spaces axi_master/m_axi] [get_bd_addr_segs gpio_devices/S_AXI/Reg] -force
   assign_bd_address -offset 0x00000000 -range 0x20000000 -target_address_space [get_bd_addr_spaces axi_master/m_axi] [get_bd_addr_segs ps/S_AXI_HP0/HP0_DDR_LOWOCM] -force
   assign_bd_address -offset 0x41200000 -range 0x00010000 -target_address_space [get_bd_addr_spaces ps/Data] [get_bd_addr_segs gpio_addr/S_AXI/Reg] -force
   assign_bd_address -offset 0x41210000 -range 0x00010000 -target_address_space [get_bd_addr_spaces ps/Data] [get_bd_addr_segs gpio_ctrl/S_AXI/Reg] -force
@@ -412,6 +429,7 @@ proc create_root_design { parentCell } {
   # Restore current instance
   current_bd_instance $oldCurInst
 
+  validate_bd_design
   save_bd_design
 }
 # End of create_root_design()
@@ -423,6 +441,4 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
-
-common::send_gid_msg -ssname BD::TCL -id 2053 -severity "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 
